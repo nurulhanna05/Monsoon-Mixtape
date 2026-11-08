@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monsoon Mixtape</title>
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <h1>Monsoon Mixtape</h1>
+    <p>Tap anywhere in Malaysia, or a city dot, to hear 20 years of NASA climate data played on Malaysian instruments.</p>
+  </header>
+
+  <main>
+    <div id="map" aria-label="Map of Malaysia. Click a place or a city dot to play its climate song."></div>
+
+    <section class="controls" aria-label="Playback controls">
+      <label>
+        City
+        <select id="city">
+          <option value="">Choose a city…</option>
+        </select>
+      </label>
+      <button id="play" type="button" aria-pressed="false">Play</button>
+      <button id="replay" type="button">Replay</button>
+      <label>
+        Tempo
+        <input id="tempo" type="range" min="0.5" max="2" step="0.25" value="1">
+        <output id="tempo-value">1.00×</output>
+      </label>
+    </section>
+
+    <p id="status" role="status">Tap the map, or choose a city.</p>
+    <progress id="progress" value="0" max="240" aria-label="Song progress in months"></progress>
+
+    <p id="caption" aria-live="polite"></p>
+
+    <section class="now" aria-label="Now playing">
+      <h2 id="now-date">–</h2>
+      <p id="now-season"></p>
+      <div id="now-flags" class="flags"></div>
+      <dl>
+        <div><dt>Temperature <small>(melody pitch)</small></dt><dd id="now-temp">–</dd></div>
+        <div><dt>Rainfall <small>(drum density)</small></dt><dd id="now-rain">–</dd></div>
+        <div><dt>Humidity <small>(echo)</small></dt><dd id="now-humidity">–</dd></div>
+        <div><dt>Haze, aerosol depth <small>(muffled flute)</small></dt><dd id="now-haze">–</dd></div>
+      </dl>
+    </section>
+
+    <fieldset class="layers">
+      <legend>Layers: switch off or solo a sound to hear what it shows</legend>
+      <div class="layer">
+        <button type="button" data-layer="melody" aria-pressed="true">Temperature · melody</button>
+        <button type="button" data-solo="melody" aria-pressed="false" aria-label="Solo temperature melody">Solo</button>
+      </div>
+      <div class="layer">
+        <button type="button" data-layer="drums" aria-pressed="true">Rain · drums</button>
+        <button type="button" data-solo="drums" aria-pressed="false" aria-label="Solo rain drums">Solo</button>
+      </div>
+      <div class="layer">
+        <button type="button" data-layer="flute" aria-pressed="true">Haze · flute</button>
+        <button type="button" data-solo="flute" aria-pressed="false" aria-label="Solo haze flute">Solo</button>
+      </div>
+      <div class="layer">
+        <button type="button" data-layer="gongs" aria-pressed="true">Unusual months &amp; years · gongs</button>
+        <button type="button" data-solo="gongs" aria-pressed="false" aria-label="Solo gongs">Solo</button>
+      </div>
+      <div class="layer">
+        <button type="button" data-layer="humidity" aria-pressed="true">Humidity · echo</button>
+      </div>
+    </fieldset>
+
+    <details class="transcript-box">
+      <summary>Full narration</summary>
+      <ol id="transcript"></ol>
+    </details>
+  </main>
+
+  <script src="vendor/tone.js"></script>
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
