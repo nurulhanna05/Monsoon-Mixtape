@@ -1,15 +1,16 @@
 # TODO
 
 ## Done
-- Sound redesign (gamelan year cycle, smoothed slendro melody, steady tempo,
-  seasons as texture, softer synths, mute/solo per layer)
-- City dots for all 37 towns, all pre-cached
-- Phase 4: anomalies, gong hits, rule-based narration
+- Phases 1–6: data, sound, map, anomalies + narration, regional instruments +
+  animations, accessibility + README
+- Sound redesign (gamelan year cycle, slendro melody, layers mute/solo)
+- 37 pre-cached city dots
 
-## Next
-- Phase 5: regional lead instruments (sape / rebab / gamelan), Samplers with
-  synth fallback, SVG instrument animations
-- Phase 6: accessibility pass and README
+## Before the hackathon (14–15 Nov)
+- Listen through a few cities and tweak sounds if needed
+- Add licensed recordings to `public/samples/` (optional; synths work)
+- Test once with Wi-Fi off
+- Try it with a screen reader (Windows: Narrator, Ctrl+Win+Enter)
 
 ## Ideas for later
 - "Compare two places" mode

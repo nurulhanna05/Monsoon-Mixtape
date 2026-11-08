@@ -24,21 +24,34 @@ export async function createMap(elementId, towns, onPick) {
   map.attributionControl.addAttribution(
     'States: <a href="https://www.geoboundaries.org/">geoBoundaries</a>');
 
-  // City dots: click (or focus + Enter) to play that city. All pre-cached.
+  // City dots: click to play that city. All pre-cached. They're left out of
+  // the Tab order (37 stops would be tiring); keyboard users get the same
+  // list in the City dropdown.
   for (const town of towns) {
-    const dot = L.marker([town.lat, town.lon], {
+    L.marker([town.lat, town.lon], {
       icon: L.divIcon({ className: "town-dot", iconSize: [14, 14] }),
       title: `${town.name}, ${town.state}`,
-      keyboard: true,
+      keyboard: false,
     }).on("click", () => onPick(town.lat, town.lon)).addTo(map);
-    // divIcons ignore `alt`, so label the element directly.
-    dot.getElement().setAttribute("role", "button");
-    dot.getElement().setAttribute("aria-label", `Play ${town.name}, ${town.state}`);
   }
 
   const marker = L.marker([0, 0], { keyboard: false, zIndexOffset: 1000 });
 
   map.on("click", (e) => onPick(e.latlng.lat, e.latlng.lng));
+
+  // Keyboard: arrow keys pan and +/- zoom (built into Leaflet); Enter or
+  // Space plays the place under the crosshair in the middle of the map.
+  const container = map.getContainer();
+  const crosshair = document.createElement("div");
+  crosshair.className = "crosshair";
+  crosshair.setAttribute("aria-hidden", "true");
+  container.append(crosshair);
+  container.addEventListener("keydown", (e) => {
+    if (e.target !== container || (e.key !== "Enter" && e.key !== " ")) return;
+    e.preventDefault();
+    const center = map.getCenter();
+    onPick(center.lat, center.lng);
+  });
 
   return {
     setMarker(lat, lon, label) {

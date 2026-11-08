@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 50" role="img" aria-label="Seruling: bamboo flute">
+  <g class="flute">
+    <!-- Bamboo tube -->
+    <rect x="8" y="17" width="184" height="16" rx="8" fill="#d8b56a" stroke="#8a6a2a" stroke-width="2"/>
+    <!-- Bamboo nodes -->
+    <g stroke="#8a6a2a" stroke-width="2"><line x1="60" y1="17" x2="60" y2="33"/><line x1="140" y1="17" x2="140" y2="33"/></g>
+    <!-- Blow hole and finger holes -->
+    <g fill="#3a2a1a">
+      <ellipse cx="28" cy="25" rx="4" ry="3"/>
+      <circle cx="90" cy="25" r="2.6"/><circle cx="102" cy="25" r="2.6"/><circle cx="114" cy="25" r="2.6"/>
+      <circle cx="152" cy="25" r="2.6"/><circle cx="164" cy="25" r="2.6"/><circle cx="176" cy="25" r="2.6"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100" role="img" aria-label="Gamelan saron: bronze bars on a carved wooden base">
+  <!-- Wooden base -->
+  <path d="M10 62 L150 62 L138 92 L22 92 Z" fill="#8b4f2a"/>
+  <path d="M22 70 L138 70" stroke="#c98a4b" stroke-width="3" stroke-linecap="round"/>
+  <path d="M30 80 q10 -8 20 0 t20 0 t20 0 t20 0 t20 0" fill="none" stroke="#c98a4b" stroke-width="2"/>
+  <!-- Bronze bars, low (left) to high (right) -->
+  <g class="bars" fill="#c9a227" stroke="#8a6d12" stroke-width="1.5">
+    <rect class="bar" x="16" y="30" width="16" height="34" rx="3"/>
+    <rect class="bar" x="35" y="32" width="16" height="32" rx="3"/>
+    <rect class="bar" x="54" y="34" width="16" height="30" rx="3"/>
+    <rect class="bar" x="73" y="36" width="16" height="28" rx="3"/>
+    <rect class="bar" x="92" y="38" width="16" height="26" rx="3"/>
+    <rect class="bar" x="111" y="40" width="16" height="24" rx="3"/>
+    <rect class="bar" x="130" y="42" width="16" height="22" rx="3"/>
+  </g>
+  <!-- Pins holding the bars -->
+  <g fill="#5a3a1a">
+    <circle cx="24" cy="36" r="1.6"/><circle cx="43" cy="38" r="1.6"/><circle cx="62" cy="40" r="1.6"/>
+    <circle cx="81" cy="42" r="1.6"/><circle cx="100" cy="44" r="1.6"/><circle cx="119" cy="46" r="1.6"/>
+    <circle cx="138" cy="48" r="1.6"/>
+  </g>
+</svg>

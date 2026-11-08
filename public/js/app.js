@@ -1,3 +1,4 @@
+import { createStage } from "./animations.js";
 import { createInstruments, LAYERS } from "./instruments.js";
 import { createMap } from "./map.js";
 import { BASE_BPM, buildBeats, scheduleSong } from "./song.js";
@@ -8,6 +9,11 @@ const SEASON_LABELS = {
   northeast_monsoon: "Northeast monsoon",
   southwest_monsoon: "Southwest monsoon (drier)",
   inter_monsoon: "Inter-monsoon",
+};
+const LEAD_LABELS = {
+  gamelan: "gamelan (bronze metallophone)",
+  sape: "sape (Sarawak lute)",
+  rebab: "rebab (bowed spike fiddle)",
 };
 const FLAG_LABELS = {
   wet: "Very wet", dry: "Very dry", hot: "Unusually hot", cool: "Unusually cool",
@@ -82,6 +88,33 @@ function showNarration(song) {
   showCaption(song.narration[0]);
 }
 
+function showSummary(song, lead) {
+  const months = song.months;
+  const range = (key, digits) => {
+    const values = months.map((m) => m[key]);
+    return `${Math.min(...values).toFixed(digits)} to ${Math.max(...values).toFixed(digits)}`;
+  };
+  const counts = {};
+  for (const a of song.anomalies) for (const k of a.kinds) counts[k] = (counts[k] || 0) + 1;
+  const countText = Object.entries(counts).map(([k, n]) => `${n} ${k}`).join(", ");
+  const summaryLine = song.narration[song.narration.length - 1].text;
+
+  const paragraphs = [
+    `${song.narration[0].text} The lead instrument is the ${LEAD_LABELS[lead]}.`,
+    `Temperature ranged from ${range("temp", 1)} °C and sets the melody: hotter months play higher notes.`,
+    `Rainfall ranged from ${range("rain", 1)} mm per day and sets the drums: rainier months are busier.`,
+    `Humidity ranged from ${range("humidity", 0)}% and sets the echo: muggier months echo more.`,
+    `Haze (aerosol optical depth) ranged from ${range("aod", 2)}; hazy months muffle the flute.`,
+    `A gong marks each of ${song.anomalies.length} unusual periods` + (countText ? ` (${countText}).` : "."),
+    summaryLine,
+  ];
+  $("summary-text").replaceChildren(...paragraphs.map((text) => {
+    const p = document.createElement("p");
+    p.textContent = text;
+    return p;
+  }));
+}
+
 // ---------- Audio ----------
 
 let audioSetup = null;
@@ -131,15 +164,18 @@ async function playPlace(lat, lon) {
     await audioReady;
     if (id !== requestId) return;
 
+    const lead = song.region.lead_instrument;
     beats = buildBeats(song);
-    scheduleSong(beats, instruments, { onBeat: showBeat, onEnd });
+    stage.reset(lead);
+    scheduleSong(beats, instruments, lead, { onBeat: showBeat, onHit: stage.hit, onEnd });
     $("progress").max = beats.length;
     $("progress").value = 0;
     map.setMarker(lat, lon, song.region.name);
     showNarration(song);
+    showSummary(song, lead);
 
     const source = song.from_cache ? "saved data" : "fresh from NASA POWER";
-    setStatus(`${song.region.name}, ${song.start}–${song.end} (${source}). ` +
+    setStatus(`Playing ${song.region.name}, ${song.start}–${song.end}, on ${lead} (${source}). ` +
       `${song.anomalies.length} unusual periods, each marked by a gong.`);
     transport.start();
     setPlaying(true);
@@ -152,6 +188,18 @@ async function playPlace(lat, lon) {
 
 const towns = await fetch("data/towns.json").then((r) => r.json());
 const map = await createMap("map", towns, playPlace);
+const stage = await createStage($("stage"));
+
+// Animations: on by default unless the system asks for reduced motion.
+function setAnimations(on) {
+  stage.setEnabled(on);
+  $("anim-toggle").setAttribute("aria-pressed", String(on));
+  $("anim-toggle").textContent = on ? "Animations: on" : "Animations: off";
+}
+setAnimations(!window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+$("anim-toggle").addEventListener("click", () => {
+  setAnimations($("anim-toggle").getAttribute("aria-pressed") !== "true");
+});
 
 // City picker grouped by state.
 const byState = new Map();

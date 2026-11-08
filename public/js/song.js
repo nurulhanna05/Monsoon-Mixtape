@@ -78,12 +78,16 @@ export function buildBeats(song) {
   });
 }
 
-// Schedule every beat on the Transport. `onBeat(beat)` is called in sync
-// with the audio (via Tone.Draw) for UI updates and animations.
-export function scheduleSong(beats, inst, { onBeat, onEnd }) {
+// Schedule every beat on the Transport, played with the given lead
+// instrument. Callbacks run in sync with the audio (via Tone.Draw):
+//   onBeat(beat)       once per month, for the UI and captions
+//   onHit(name, info)  every instrument stroke, for the animations
+export function scheduleSong(beats, inst, leadName, { onBeat, onHit, onEnd }) {
   const transport = Tone.getTransport();
   const draw = Tone.getDraw();
   const ticks = (b) => `${Math.round(b * transport.PPQ)}i`;
+  const lead = inst.leads[leadName] || inst.leads.gamelan;
+  const show = (t, name, info = {}) => draw.schedule(() => onHit(name, info), t);
 
   transport.cancel();
   transport.position = 0;
@@ -97,21 +101,47 @@ export function scheduleSong(beats, inst, { onBeat, onEnd }) {
       inst.reverb.wet.rampTo(inst.humidityOn ? beat.reverbWet : 0, ramp, time);
       inst.serulingFilter.frequency.rampTo(beat.serulingCutoff, ramp, time);
 
-      inst.lead.triggerAttackRelease(beat.freq, beatSec * 1.5, time, 0.7);
-      if (beat.bonang) inst.bonang.triggerAttackRelease(beat.freq * 2, beatSec, at(0.5), 0.4);
+      const noteLength = beatSec * (lead.legato ? 1.1 : 1.5);
+      lead.play(beat.freq, noteLength, time, 0.7);
+      show(time, "lead", { step: beat.step, duration: noteLength });
+      if (beat.bonang && lead.elaborate) {
+        lead.play(beat.freq * 2, beatSec, at(0.5), 0.3);
+        show(at(0.5), "lead", { step: beat.step, duration: beatSec, soft: true });
+      }
 
-      for (const s of beat.kompangHits) inst.kompang.hit(at(s / 4), beat.drumVelocity);
-      if (beat.gendang) inst.gendang.hit(time, beat.drumVelocity);
-      if (beat.gendangExtra) inst.gendang.hit(at(0.5), beat.drumVelocity * 0.7);
+      const speed = beat.kompangHits.length / 4; // 0-1, rainier = busier
+      for (const s of beat.kompangHits) {
+        inst.kompang.hit(at(s / 4), beat.drumVelocity);
+        show(at(s / 4), "kompang", { speed });
+      }
+      if (beat.gendang) {
+        inst.gendang.hit(time, beat.drumVelocity);
+        show(time, "gendang", { speed });
+      }
+      if (beat.gendangExtra) {
+        inst.gendang.hit(at(0.5), beat.drumVelocity * 0.7);
+        show(at(0.5), "gendang", { speed });
+      }
 
       if (beat.serulingBeats) {
         // Flute plays the melody note an octave up, held across its phrase.
-        inst.seruling.play(beat.freq * 2, beatSec * beat.serulingBeats * 0.9, time, 0.6);
+        const duration = beatSec * beat.serulingBeats * 0.9;
+        inst.seruling.play(beat.freq * 2, duration, time, 0.6);
+        show(time, "seruling", { duration, hazy: beat.hazy });
       }
 
-      if (beat.kenong) inst.kenong.hit(beat.freq, time);
-      if (beat.kempul) inst.kempul.hit(beat.freq / 2, time);
-      if (beat.gong) inst.gong.hit(time, Math.min(1, 0.6 + beat.gong.severity / 10));
+      if (beat.kenong) {
+        inst.kenong.hit(beat.freq, time);
+        show(time, "gong", { big: false });
+      }
+      if (beat.kempul) {
+        inst.kempul.hit(beat.freq / 2, time);
+        show(time, "gong", { big: false });
+      }
+      if (beat.gong) {
+        inst.gong.hit(time, Math.min(1, 0.6 + beat.gong.severity / 10));
+        show(time, "gong", { big: true });
+      }
 
       draw.schedule(() => onBeat(beat), time);
     }, ticks(beat.index));

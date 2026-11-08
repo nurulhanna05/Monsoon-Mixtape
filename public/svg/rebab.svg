@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 160" role="img" aria-label="Rebab: spike fiddle with a round body and a bow">
+  <!-- Spike foot -->
+  <rect x="56" y="140" width="8" height="16" rx="2" fill="#5a3a1a"/>
+  <!-- Heart-shaped wooden body with skin face -->
+  <path d="M60 140 C24 128 24 92 44 86 C52 84 58 90 60 96 C62 90 68 84 76 86 C96 92 96 128 60 140 Z" fill="#8b4f2a" stroke="#5a3a1a" stroke-width="2"/>
+  <ellipse cx="60" cy="112" rx="20" ry="18" fill="#efdcb5"/>
+  <!-- Neck and pegs -->
+  <rect x="56" y="14" width="8" height="78" rx="3" fill="#6b3d1f"/>
+  <g fill="#c9a227"><rect x="44" y="20" width="12" height="5" rx="2"/><rect x="64" y="30" width="12" height="5" rx="2"/></g>
+  <path d="M54 10 Q60 0 66 10 Z" fill="#c9a227"/>
+  <!-- Strings -->
+  <g stroke="#3a2a1a" stroke-width="1"><line x1="58" y1="22" x2="58" y2="122"/><line x1="62" y1="32" x2="62" y2="122"/></g>
+  <!-- Bow -->
+  <g class="bow">
+    <path d="M8 100 Q60 88 112 100" fill="none" stroke="#6b3d1f" stroke-width="3" stroke-linecap="round"/>
+    <line x1="10" y1="103" x2="110" y2="103" stroke="#f2e6cf" stroke-width="1.5"/>
+  </g>
+</svg>

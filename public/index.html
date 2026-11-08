@@ -4,19 +4,26 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Monsoon Mixtape</title>
+  <meta name="description" content="Hear 20 years of NASA climate data for any place in Malaysia, played on Malaysian instruments.">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <a class="skip-link" href="#controls">Skip to player controls</a>
+
   <header>
     <h1>Monsoon Mixtape</h1>
     <p>Tap anywhere in Malaysia, or a city dot, to hear 20 years of NASA climate data played on Malaysian instruments.</p>
   </header>
 
   <main>
-    <div id="map" aria-label="Map of Malaysia. Click a place or a city dot to play its climate song."></div>
+    <div id="map" role="application" aria-label="Map of Malaysia" aria-describedby="map-help"></div>
+    <p id="map-help" class="hint">
+      Keyboard: focus the map, move with the arrow keys, zoom with + and −, then press Enter to play the place under the crosshair.
+      Or choose a city from the list below.
+    </p>
 
-    <section class="controls" aria-label="Playback controls">
+    <section id="controls" class="controls" aria-label="Player controls" tabindex="-1">
       <label>
         City
         <select id="city">
@@ -27,8 +34,8 @@
       <button id="replay" type="button">Replay</button>
       <label>
         Tempo
-        <input id="tempo" type="range" min="0.5" max="2" step="0.25" value="1">
-        <output id="tempo-value">1.00×</output>
+        <input id="tempo" type="range" min="0.5" max="2" step="0.25" value="1" aria-describedby="tempo-value">
+        <output id="tempo-value" for="tempo">1.00×</output>
       </label>
     </section>
 
@@ -37,8 +44,19 @@
 
     <p id="caption" aria-live="polite"></p>
 
-    <section class="now" aria-label="Now playing">
-      <h2 id="now-date">–</h2>
+    <section class="stage-box" aria-labelledby="stage-heading">
+      <div class="stage-head">
+        <h2 id="stage-heading">Instruments</h2>
+        <button id="anim-toggle" type="button" aria-pressed="true">Animations: on</button>
+      </div>
+      <!-- Purely visual; the same information is in the captions and summary. -->
+      <div id="stage" aria-hidden="true"></div>
+      <p class="hint">Each instrument appears while it's playing.</p>
+    </section>
+
+    <section class="now" aria-labelledby="now-heading">
+      <h2 id="now-heading" class="sr-only">Now playing</h2>
+      <p id="now-date" class="now-date">–</p>
       <p id="now-season"></p>
       <div id="now-flags" class="flags"></div>
       <dl>
@@ -73,10 +91,20 @@
     </fieldset>
 
     <details class="transcript-box">
-      <summary>Full narration</summary>
+      <summary>Text summary of this song</summary>
+      <div id="summary-text"><p>Play a place to see its summary.</p></div>
+      <h3>Narration</h3>
       <ol id="transcript"></ol>
     </details>
   </main>
+
+  <footer>
+    <p>
+      Climate data: <a href="https://power.larc.nasa.gov/">NASA POWER</a> (NASA Langley Research Center).
+      Map: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors.
+      State outlines: <a href="https://www.geoboundaries.org/">geoBoundaries</a>.
+    </p>
+  </footer>
 
   <script src="vendor/tone.js"></script>
   <script src="vendor/leaflet/leaflet.js"></script>

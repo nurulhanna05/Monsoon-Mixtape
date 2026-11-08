@@ -1,6 +1,6 @@
 # Monsoon Mixtape: progress notes
 
-Last worked on: 8 Nov 2026. Hackathon: NASA Space Apps, Kuala Lumpur, 14–15 Nov 2026.
+Last worked on: 8 Nov 2026 (all 6 phases done). Hackathon: NASA Space Apps, Kuala Lumpur, 14–15 Nov 2026.
 
 ## How to run it
 1. Open a terminal (PowerShell) and go to the project:
@@ -22,7 +22,7 @@ restart the server (auto-reload sometimes misses changes on Windows).
 - **Phase 2 (sound):** Tone.js plays one month per beat, ~60 seconds per song.
 - **Phase 3 (map):** Leaflet map, state outlines (work offline), place names,
   lead instrument chosen per state (sape = Sarawak, rebab = Kelantan,
-  gamelan = elsewhere; the instruments themselves come in Phase 5).
+  gamelan = elsewhere).
 - **City dots:** 37 cities on the map and in the City dropdown; all
   pre-saved, so the demo works without Wi-Fi.
 - **Sound redesign:** steady beat; each year = one gamelan cycle (kenong every
@@ -32,22 +32,24 @@ restart the server (auto-reload sometimes misses changes on Windows).
 - **Phase 4 (anomalies + narration):** unusual months (wet, dry, hot, cool,
   humid, windy, hazy) get a big gong hit; captions appear as the song plays;
   intro + trend summary; "Full narration" text at the bottom.
+- **Phase 5 (instruments):** lead instrument by region (sape = Sarawak,
+  rebab = Kelantan, gamelan = elsewhere). Real recordings can be dropped into
+  `public/samples/<instrument>/` (see the README there); synths are used until
+  then. Animated SVG instruments (`public/svg/`) appear only while playing,
+  with an Animations on/off button.
+- **Phase 6 (accessibility + README):** keyboard map (arrows + Enter at the
+  crosshair), skip link, screen-reader labels, live captions, text summary of
+  every song, dark-mode contrast fix. Full `README.md` with setup, mapping
+  and credits.
 
 ## What's left
-- **Phase 5:** sape / rebab / gamelan lead sounds by region; load your own
-  recordings from `public/samples/<instrument>/` (synths as fallback);
-  animated SVG instruments (drums bounce, gamelan bars light up, gong ripples,
-  flute greys out in haze); animations on/off toggle.
-- **Phase 6:** accessibility pass (keyboard use of the map, screen-reader
-  labels, text summary) and the README with setup, mapping explanation and
-  credits.
-- Not yet checked: whether you like the new sound. Have a listen first.
+- All 6 phases are done. See `TODO.md` for pre-hackathon checks.
 
 ## Ideas for later
 - "Compare two places" mode.
 - Decided against: a different location for each variable (confusing story).
 
-## Credits to include in the README
+## Credits (already in the README)
 - NASA POWER (power.larc.nasa.gov): the climate data. Cite NASA Langley
   Research Center POWER Project.
 - OpenStreetMap contributors: map tiles.

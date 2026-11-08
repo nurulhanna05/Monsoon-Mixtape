@@ -5,6 +5,7 @@
   --accent: #a4452c;
   --card: #ffffff;
   --border: #e3dacb;
+  --on-accent: #ffffff; /* text on accent backgrounds */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -15,6 +16,7 @@
     --accent: #e58a6c;
     --card: #221e18;
     --border: #3a3329;
+    --on-accent: #1f1a14;
   }
 }
 
@@ -28,7 +30,7 @@ body {
   font: 16px/1.5 system-ui, sans-serif;
 }
 
-header, main { max-width: 960px; margin: 0 auto; }
+header, main, footer { max-width: 960px; margin: 0 auto; }
 header { padding: 24px 0 8px; }
 h1 { margin: 0; color: var(--accent); }
 header p { margin: 4px 0 0; color: var(--muted); }
@@ -63,7 +65,7 @@ button, select {
   cursor: pointer;
 }
 
-#play { background: var(--accent); border-color: var(--accent); color: #fff; min-width: 90px; }
+#play { background: var(--accent); border-color: var(--accent); color: var(--on-accent); min-width: 90px; }
 
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
@@ -77,7 +79,7 @@ progress { width: 100%; height: 10px; accent-color: var(--accent); }
   border: 1px solid var(--border);
   border-radius: 12px;
 }
-.now h2 { margin: 0; }
+.now-date { margin: 0; font-size: 24px; font-weight: 700; }
 .now p { margin: 0 0 12px; color: var(--muted); }
 .now dl {
   display: grid;
@@ -115,7 +117,7 @@ progress { width: 100%; height: 10px; accent-color: var(--accent); }
   font-size: 13px;
   font-weight: 600;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .layers {
@@ -135,9 +137,103 @@ progress { width: 100%; height: 10px; accent-color: var(--accent); }
 .layer button:only-child { border-radius: 8px; }
 .layer button + button { border-left: none; }
 .layer button[data-layer][aria-pressed="false"] { opacity: 0.5; text-decoration: line-through; }
-.layer button[data-solo][aria-pressed="true"] { background: var(--accent); color: #fff; }
+.layer button[data-solo][aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
 
 .transcript-box { margin-top: 16px; }
 .transcript-box summary { cursor: pointer; font-weight: 600; }
 #transcript li { margin: 6px 0; color: var(--muted); }
 #transcript li.current { color: var(--text); font-weight: 600; }
+
+/* ---------- Accessibility helpers ---------- */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute;
+  left: 16px;
+  top: -48px;
+  padding: 8px 16px;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-radius: 0 0 8px 8px;
+  z-index: 2000;
+}
+.skip-link:focus { top: 0; }
+
+.hint { margin: 6px 0 0; font-size: 14px; color: var(--muted); }
+
+#map:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.crosshair {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
+  border: 2px solid #1f6feb;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #fff;
+  pointer-events: none;
+  z-index: 1000;
+}
+#map:focus-visible .crosshair { display: block; }
+
+footer { padding: 24px 0 0; font-size: 13px; color: var(--muted); }
+footer a, .leaflet-container a { color: inherit; }
+
+/* ---------- Instrument stage ---------- */
+
+.stage-box {
+  margin-top: 16px;
+  padding: 12px 16px 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.stage-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.stage-head h2 { margin: 0; font-size: 18px; }
+.stage-head button { padding: 6px 12px; font-size: 14px; }
+
+#stage {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+  min-height: 150px;
+}
+
+.inst {
+  margin: 0;
+  text-align: center;
+  opacity: 0;
+  transform: scale(0.94);
+  transition: opacity 0.3s, transform 0.3s;
+}
+.inst.active { opacity: 1; transform: scale(1); }
+.inst[hidden] { display: none; }
+.inst .art svg { width: 100%; height: 100px; overflow: visible; }
+.inst figcaption { font-weight: 600; font-size: 14px; }
+.inst figcaption small { display: block; font-weight: 400; color: var(--muted); }
+
+/* Let SVG parts scale and rotate around their own centre. */
+.inst svg * { transform-box: fill-box; transform-origin: center; }
+
+.inst-seruling .art { transition: filter 0.3s, opacity 0.3s; }
+.inst-seruling.glow .art { filter: drop-shadow(0 0 8px #ffd54a); }
+.inst-seruling.hazy .art { filter: grayscale(1) blur(1px); opacity: 0.55; }
+.inst-seruling.hazy figcaption small::after { content: " (hazy: muffled)"; }
+
+#stage.no-motion .inst,
+#stage.no-motion .inst-seruling .art { transition: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .inst, .inst-seruling .art { transition: none; }
+}
