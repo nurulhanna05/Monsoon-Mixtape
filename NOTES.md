@@ -51,8 +51,8 @@ restart the server (auto-reload sometimes misses changes on Windows).
   "Mixer" adds mute/solo/volume. The view is remembered per browser.
 - **Phase 4 (13 Nov): animated band** (`public/js/band.js`, inline SVG; the
   old `animations.js` and `public/svg/` were removed). One seated player per
-  instrument, all drawn as Rimau (the Space Apps KL tiger-astronaut
-  mascot; our own simple drawing, not the official art); strikes are bigger/faster in rainier months, the lead is
+  instrument (human players in songkok, tanjak or tudung; a tiger-astronaut
+  "Rimau" version is in the "Tiger band" commit); strikes are bigger/faster in rainier months, the lead is
   livelier when hotter, the flute player greys out in haze, big gongs get a
   big swing and ripples. Resting or muted players dim; Animations off stops all motion.
 
