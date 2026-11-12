@@ -16,35 +16,24 @@
     <p>Tap anywhere in Malaysia, or a city dot, to hear 20 years of NASA climate data played on Malaysian instruments.</p>
   </header>
 
-  <main>
-    <div id="map" role="application" aria-label="Map of Malaysia" aria-describedby="map-help"></div>
-    <p id="map-help" class="hint">
-      Keyboard: focus the map, move with the arrow keys, zoom with + and −, then press Enter to play the place under the crosshair.
-      Or choose a city from the list below.
-    </p>
-
-    <section id="controls" class="controls" aria-label="Player controls" tabindex="-1">
-      <label>
+  <!-- DOM order = mobile order (map, band, transport, timeline, card);
+       on wide screens CSS grid areas place them in two columns. -->
+  <main class="app">
+    <section class="area-map" aria-label="Choose a place">
+      <div id="map" role="application" aria-label="Map of Malaysia" aria-describedby="map-help"></div>
+      <p id="map-help" class="hint">
+        Keyboard: focus the map, move with the arrow keys, zoom with + and −, then press Enter to play the place under the crosshair.
+        Or choose a city from the list below.
+      </p>
+      <label class="city-pick">
         City
         <select id="city">
           <option value="">Choose a city…</option>
         </select>
       </label>
-      <button id="play" type="button" aria-pressed="false">Play</button>
-      <button id="replay" type="button">Replay</button>
-      <label>
-        Tempo
-        <input id="tempo" type="range" min="0.5" max="2" step="0.25" value="1" aria-describedby="tempo-value">
-        <output id="tempo-value" for="tempo">1.00×</output>
-      </label>
     </section>
 
-    <p id="status" role="status">Tap the map, or choose a city.</p>
-    <progress id="progress" value="0" max="240" aria-label="Song progress in months"></progress>
-
-    <p id="caption" aria-live="polite"></p>
-
-    <section class="stage-box" aria-labelledby="stage-heading">
+    <section class="area-stage stage-box" aria-labelledby="stage-heading">
       <div class="stage-head">
         <h2 id="stage-heading">Instruments</h2>
         <button id="anim-toggle" type="button" aria-pressed="true">Animations: on</button>
@@ -52,9 +41,91 @@
       <!-- Purely visual; the same information is in the captions and summary. -->
       <div id="stage" aria-hidden="true"></div>
       <p class="hint">Each instrument appears while it's playing.</p>
+      <p id="caption" aria-live="polite"></p>
     </section>
 
-    <section class="now" aria-labelledby="now-heading">
+    <section id="controls" class="area-transport transport" aria-label="Player controls" tabindex="-1">
+      <div class="transport-buttons">
+        <button id="play" type="button" aria-pressed="false">Play</button>
+        <button id="replay" type="button">Replay</button>
+      </div>
+      <label>
+        Tempo
+        <input id="tempo" type="range" min="0.5" max="2" step="0.25" value="1" aria-describedby="tempo-value">
+        <output id="tempo-value" for="tempo">1.00×</output>
+      </label>
+      <div class="master">
+        <label>
+          Volume
+          <input id="master" type="range" min="0" max="100" step="5" value="80" aria-valuetext="80%">
+          <output id="master-value" for="master">80%</output>
+        </label>
+        <!-- Visual only: a live level meter for the master output. -->
+        <div class="meter" aria-hidden="true" title="Output level"><div id="meter-fill" class="meter-fill"></div></div>
+      </div>
+      <p id="status" role="status">Tap the map, or choose a city.</p>
+    </section>
+
+    <section class="area-timeline timeline-box" aria-labelledby="timeline-heading">
+      <h2 id="timeline-heading" class="sr-only">Timeline</h2>
+      <div class="tracks">
+        <!-- Lane headers: ordinary controls, lined up with the canvas lanes. -->
+        <div class="lane-heads" role="group" aria-label="Layers: mute, solo or turn down a sound to hear what it shows">
+          <div class="lane-ruler" aria-hidden="true"></div>
+          <div class="lane-head" data-lane="melody">
+            <span class="lane-name">Temperature <small>melody</small></span>
+            <div class="lane-controls">
+              <button type="button" data-mute="melody" aria-pressed="false" aria-label="Mute temperature melody">M</button>
+              <button type="button" data-solo="melody" aria-pressed="false" aria-label="Solo temperature melody">S</button>
+              <input type="range" data-volume="melody" min="0" max="100" step="5" value="100" aria-label="Temperature melody volume" aria-valuetext="100%">
+            </div>
+          </div>
+          <div class="lane-head" data-lane="drums">
+            <span class="lane-name">Rain <small>drums</small></span>
+            <div class="lane-controls">
+              <button type="button" data-mute="drums" aria-pressed="false" aria-label="Mute rain drums">M</button>
+              <button type="button" data-solo="drums" aria-pressed="false" aria-label="Solo rain drums">S</button>
+              <input type="range" data-volume="drums" min="0" max="100" step="5" value="100" aria-label="Rain drums volume" aria-valuetext="100%">
+            </div>
+          </div>
+          <div class="lane-head" data-lane="flute">
+            <span class="lane-name">Haze <small>flute</small></span>
+            <div class="lane-controls">
+              <button type="button" data-mute="flute" aria-pressed="false" aria-label="Mute haze flute">M</button>
+              <button type="button" data-solo="flute" aria-pressed="false" aria-label="Solo haze flute">S</button>
+              <input type="range" data-volume="flute" min="0" max="100" step="5" value="100" aria-label="Haze flute volume" aria-valuetext="100%">
+            </div>
+          </div>
+          <div class="lane-head" data-lane="humidity">
+            <span class="lane-name">Humidity <small>echo</small></span>
+            <div class="lane-controls">
+              <button type="button" data-mute="humidity" aria-pressed="false" aria-label="Mute humidity echo">M</button>
+              <input type="range" data-volume="humidity" min="0" max="100" step="5" value="100" aria-label="Humidity echo amount" aria-valuetext="100%">
+            </div>
+          </div>
+          <div class="lane-head" data-lane="gongs">
+            <span class="lane-name">Unusual months <small>gongs</small></span>
+            <div class="lane-controls">
+              <button type="button" data-mute="gongs" aria-pressed="false" aria-label="Mute gongs">M</button>
+              <button type="button" data-solo="gongs" aria-pressed="false" aria-label="Solo gongs">S</button>
+              <input type="range" data-volume="gongs" min="0" max="100" step="5" value="100" aria-label="Gongs volume" aria-valuetext="100%">
+            </div>
+          </div>
+        </div>
+        <div class="lanes">
+          <canvas class="timeline-data" aria-hidden="true"></canvas>
+          <canvas class="timeline-head" tabindex="0" role="slider" aria-label="Timeline month"
+            aria-valuemin="1" aria-valuemax="240" aria-valuenow="1" aria-valuetext="No song loaded"
+            aria-disabled="true" aria-describedby="timeline-help"></canvas>
+        </div>
+      </div>
+      <p id="timeline-help" class="hint">
+        Click or drag on the timeline to jump to a month. Keyboard: arrow keys move a month, Page Up/Down a year, then press Enter to jump.
+        Brighter bars are unusual months; each gong is an unusual period.
+      </p>
+    </section>
+
+    <section class="area-card now" aria-labelledby="now-heading">
       <h2 id="now-heading" class="sr-only">Now playing</h2>
       <p id="now-date" class="now-date">–</p>
       <p id="now-season"></p>
@@ -67,30 +138,7 @@
       </dl>
     </section>
 
-    <fieldset class="layers">
-      <legend>Layers: switch off or solo a sound to hear what it shows</legend>
-      <div class="layer">
-        <button type="button" data-layer="melody" aria-pressed="true">Temperature · melody</button>
-        <button type="button" data-solo="melody" aria-pressed="false" aria-label="Solo temperature melody">Solo</button>
-      </div>
-      <div class="layer">
-        <button type="button" data-layer="drums" aria-pressed="true">Rain · drums</button>
-        <button type="button" data-solo="drums" aria-pressed="false" aria-label="Solo rain drums">Solo</button>
-      </div>
-      <div class="layer">
-        <button type="button" data-layer="flute" aria-pressed="true">Haze · flute</button>
-        <button type="button" data-solo="flute" aria-pressed="false" aria-label="Solo haze flute">Solo</button>
-      </div>
-      <div class="layer">
-        <button type="button" data-layer="gongs" aria-pressed="true">Unusual months &amp; years · gongs</button>
-        <button type="button" data-solo="gongs" aria-pressed="false" aria-label="Solo gongs">Solo</button>
-      </div>
-      <div class="layer">
-        <button type="button" data-layer="humidity" aria-pressed="true">Humidity · echo</button>
-      </div>
-    </fieldset>
-
-    <details class="transcript-box">
+    <details class="area-transcript transcript-box">
       <summary>Text summary of this song</summary>
       <div id="summary-text"><p>Play a place to see its summary.</p></div>
       <h3>Narration</h3>

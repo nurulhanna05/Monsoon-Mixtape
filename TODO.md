@@ -6,6 +6,13 @@
 - Sound redesign (gamelan year cycle, slendro melody, layers mute/solo)
 - 37 pre-cached city dots
 
+## UI redesign (started 12 Nov), stop after each phase to test
+- [x] Phase 1: two-column layout and transport bar
+- [x] Phase 2: master + per-lane volume, level meter
+- [x] Phase 3: multitrack timeline with playhead and seeking
+- [ ] Phase 4: animated band driven by the data
+- [ ] Phase 5: narration timing fix, accessibility check, README update
+
 ## Before the hackathon (14–15 Nov)
 - Listen through a few cities and tweak sounds if needed
 - Add licensed recordings to `public/samples/` (optional; synths work)

@@ -41,9 +41,15 @@ restart the server (auto-reload sometimes misses changes on Windows).
   crosshair), skip link, screen-reader labels, live captions, text summary of
   every song, dark-mode contrast fix. Full `README.md` with setup, mapping
   and credits.
+- **UI redesign phases 1–3 (12 Nov), plan in `TODO.md`:** master Volume slider with a live level
+  meter, a volume slider for each layer (humidity slider = echo amount);
+  two-column layout on wide screens, one column on phones. Multitrack
+  timeline (`public/js/timeline.js`): a lane per layer drawn from the data,
+  gongs for unusual periods, playhead; click, drag or keys to jump.
 
 ## What's left
-- All 6 phases are done. See `TODO.md` for pre-hackathon checks.
+- UI redesign phases 4–5 (animated band; narration fade, accessibility
+  check, README). Then the pre-hackathon checks. Both lists are in `TODO.md`.
 
 ## Ideas for later
 - "Compare two places" mode.

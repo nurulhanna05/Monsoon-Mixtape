@@ -2,6 +2,7 @@ import { createStage } from "./animations.js";
 import { createInstruments, LAYERS } from "./instruments.js";
 import { createMap } from "./map.js";
 import { BASE_BPM, buildBeats, scheduleSong } from "./song.js";
+import { createTimeline } from "./timeline.js";
 
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"];
@@ -32,7 +33,13 @@ const layerState = {
   muted: Object.fromEntries(LAYERS.map((l) => [l, false])),
   solo: null,
   humidity: true,
+  volume: { melody: 100, drums: 100, flute: 100, gongs: 100, humidity: 100 }, // percent
 };
+
+// Sliders are in percent; squaring makes 50% sound about half as loud.
+function percentToDb(percent) {
+  return percent === 0 ? -Infinity : Tone.gainToDb((percent / 100) ** 2);
+}
 
 // ---------- Small UI helpers ----------
 
@@ -72,8 +79,33 @@ function showBeat(beat) {
     chip.textContent = FLAG_LABELS[f];
     return chip;
   }));
-  $("progress").value = beat.index + 1;
   if (lines.has(beat.index)) showCaption(lines.get(beat.index));
+}
+
+// Short description of a month for the timeline slider, e.g.
+// "March 2014: 27.1 °C, 12.3 mm/day rain, very wet".
+function describeBeat(beat) {
+  const m = beat.month;
+  const flags = m.flags.map((f) => FLAG_LABELS[f].toLowerCase());
+  return [`${MONTH_NAMES[m.month - 1]} ${m.year}: ${m.temp.toFixed(1)} °C`,
+    `${m.rain.toFixed(1)} mm/day rain`, ...flags].join(", ");
+}
+
+// Jump to a month. Keeps playing (or paused) as it was; after the song has
+// finished, it starts playing from there.
+function seekTo(index) {
+  if (!beats.length) return;
+  const ticks = index * transport.PPQ;
+  if (transport.state === "stopped") {
+    transport.start(undefined, `${ticks}i`);
+    setPlaying(true);
+  } else {
+    transport.ticks = ticks;
+  }
+  showBeat(beats[index]);
+  // Show the narration line that was last reached at this point.
+  const reached = [...lines.keys()].filter((k) => k <= index);
+  if (reached.length) showCaption(lines.get(Math.max(...reached)));
 }
 
 function showNarration(song) {
@@ -126,18 +158,41 @@ function ensureAudio() {
     .then((inst) => {
       instruments = inst;
       applyLayers();
+      startMeter();
     });
   return audioSetup;
 }
 
 function applyLayers() {
+  // Dim timeline lanes that can't be heard.
+  timeline.setDimmed([
+    ...LAYERS.filter((l) => layerState.muted[l] || layerState.volume[l] === 0 ||
+      (layerState.solo && layerState.solo !== l)),
+    ...(layerState.humidity && layerState.volume.humidity ? [] : ["humidity"]),
+  ]);
   if (!instruments) return;
   for (const layer of LAYERS) {
     const channel = instruments.channels[layer];
     channel.mute = layerState.muted[layer];
     channel.solo = layerState.solo === layer;
+    channel.volume.value = percentToDb(layerState.volume[layer]);
   }
-  instruments.humidityOn = layerState.humidity;
+  instruments.echoLevel = layerState.humidity ? layerState.volume.humidity / 100 : 0;
+}
+
+// Live level meter on the master output, redrawn every frame.
+function startMeter() {
+  const meter = new Tone.Meter({ smoothing: 0.8 });
+  Tone.getDestination().connect(meter);
+  const fill = $("meter-fill");
+  const draw = () => {
+    const db = meter.getValue(); // about -60 (quiet) to 0 (loudest)
+    const level = Math.min(1, Math.max(0, (db + 60) / 60));
+    fill.style.transform = `scaleX(${level})`;
+    fill.classList.toggle("hot", db > -3);
+    requestAnimationFrame(draw);
+  };
+  draw();
 }
 
 function onEnd() {
@@ -153,6 +208,9 @@ async function playPlace(lat, lon) {
   setPlaying(false);
   beats = [];
   map.setMarker(lat, lon);
+  // Keep the dropdown in step with the map; blank when it isn't a city dot.
+  const town = towns.find((t) => t.lat === lat && t.lon === lon);
+  $("city").value = town ? town.name : "";
   setStatus(`Loading climate data for ${lat.toFixed(2)}°, ${lon.toFixed(2)}°…`);
 
   try {
@@ -168,8 +226,7 @@ async function playPlace(lat, lon) {
     beats = buildBeats(song);
     stage.reset(lead);
     scheduleSong(beats, instruments, lead, { onBeat: showBeat, onHit: stage.hit, onEnd });
-    $("progress").max = beats.length;
-    $("progress").value = 0;
+    timeline.load(beats);
     map.setMarker(lat, lon, song.region.name);
     showNarration(song);
     showSummary(song, lead);
@@ -189,6 +246,7 @@ async function playPlace(lat, lon) {
 const towns = await fetch("data/towns.json").then((r) => r.json());
 const map = await createMap("map", towns, playPlace);
 const stage = await createStage($("stage"));
+const timeline = createTimeline(document.querySelector(".lanes"), { onSeek: seekTo, describe: describeBeat });
 
 // Animations: on by default unless the system asks for reduced motion.
 function setAnimations(on) {
@@ -251,14 +309,23 @@ $("tempo").addEventListener("input", () => {
   $("tempo-value").textContent = `${factor.toFixed(2)}×`;
 });
 
-// Layer mute/solo buttons.
-for (const button of document.querySelectorAll("[data-layer]")) {
+function setMasterVolume() {
+  const percent = Number($("master").value);
+  Tone.getDestination().volume.value = percentToDb(percent);
+  $("master").setAttribute("aria-valuetext", `${percent}%`);
+  $("master-value").textContent = `${percent}%`;
+}
+$("master").addEventListener("input", setMasterVolume);
+setMasterVolume();
+
+// Lane header mute/solo buttons and volume sliders.
+for (const button of document.querySelectorAll("[data-mute]")) {
   button.addEventListener("click", () => {
-    const layer = button.dataset.layer;
-    const on = button.getAttribute("aria-pressed") !== "true";
-    button.setAttribute("aria-pressed", String(on));
-    if (layer === "humidity") layerState.humidity = on;
-    else layerState.muted[layer] = !on;
+    const layer = button.dataset.mute;
+    const muted = button.getAttribute("aria-pressed") !== "true";
+    button.setAttribute("aria-pressed", String(muted));
+    if (layer === "humidity") layerState.humidity = !muted;
+    else layerState.muted[layer] = muted;
     applyLayers();
   });
 }
@@ -269,6 +336,13 @@ for (const button of document.querySelectorAll("[data-solo]")) {
     for (const b of document.querySelectorAll("[data-solo]")) {
       b.setAttribute("aria-pressed", String(b.dataset.solo === layerState.solo));
     }
+    applyLayers();
+  });
+}
+for (const slider of document.querySelectorAll("[data-volume]")) {
+  slider.addEventListener("input", () => {
+    layerState.volume[slider.dataset.volume] = Number(slider.value);
+    slider.setAttribute("aria-valuetext", `${slider.value}%`);
     applyLayers();
   });
 }

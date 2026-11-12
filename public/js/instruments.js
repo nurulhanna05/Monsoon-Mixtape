@@ -244,6 +244,6 @@ export async function createInstruments() {
     reverb,
     channels,
     sampled: names.filter((n) => samples[n]),
-    humidityOn: true, // when off, reverb no longer follows humidity
+    echoLevel: 1, // 0–1 scale on the humidity echo (0 = echo off)
   };
 }

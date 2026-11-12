@@ -98,7 +98,7 @@ export function scheduleSong(beats, inst, leadName, { onBeat, onHit, onEnd }) {
       const at = (fraction) => time + fraction * beatSec;
 
       const ramp = Math.min(0.2, beatSec * 0.8); // finish before the next beat
-      inst.reverb.wet.rampTo(inst.humidityOn ? beat.reverbWet : 0, ramp, time);
+      inst.reverb.wet.rampTo(beat.reverbWet * inst.echoLevel, ramp, time);
       inst.serulingFilter.frequency.rampTo(beat.serulingCutoff, ramp, time);
 
       const noteLength = beatSec * (lead.legato ? 1.1 : 1.5);
