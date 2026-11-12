@@ -13,13 +13,14 @@
 - [x] Phase 3b: simple view first (big-moments strip), "Show the data" and
   "Mixer" to open more; hover tooltips; fuller screen-reader readout
 - [x] Phase 4: animated band driven by the data
-- [ ] Phase 5: narration timing fix, accessibility check, README update
+- [x] Phase 5: narration timing fix, accessibility check, README update
 
 ## Before the hackathon (14–15 Nov)
 - Listen through a few cities and tweak sounds if needed
 - Add licensed recordings to `public/samples/` (optional; synths work)
 - Test once with Wi-Fi off
-- Try it with a screen reader (Windows: Narrator, Ctrl+Win+Enter)
+- Try it with a screen reader (Windows: Narrator, Ctrl+Win+Enter), including
+  the timeline slider (Tab to it, arrow keys, N/P, Enter)
 
 ## Ideas for later
 - "Compare two places" mode

@@ -49,6 +49,9 @@ restart the server (auto-reload sometimes misses changes on Windows).
   Opens in a simple view (one "Big moments" strip, a gong per narration
   story) so it isn't overwhelming; "Show the data" adds the lanes and
   "Mixer" adds mute/solo/volume. The view is remembered per browser.
+- **Phase 5 (13 Nov):** narration lines fade after ~4 s; accessibility
+  pass (labels, contrast in both themes, tab order, 24 px targets); README
+  updated.
 - **Phase 4 (13 Nov): animated band** (`public/js/band.js`, inline SVG; the
   old `animations.js` and `public/svg/` were removed). One seated player per
   instrument (human players in songkok, tanjak or tudung; a tiger-astronaut
@@ -57,7 +60,7 @@ restart the server (auto-reload sometimes misses changes on Windows).
   big swing and ripples. Resting or muted players dim; Animations off stops all motion.
 
 ## What's left
-- UI redesign phase 5 (narration fade, accessibility check, README). Then the pre-hackathon checks. Both lists are in `TODO.md`.
+- UI redesign is done (5 phases). Left: the pre-hackathon checks in `TODO.md`.
 
 ## Ideas for later
 - "Compare two places" mode.

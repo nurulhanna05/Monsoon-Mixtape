@@ -57,9 +57,18 @@ function formatDate(isoMonth) {
   return `${MONTH_NAMES[m - 1]} ${y}`;
 }
 
+// Each narration line shows for about 4 seconds, then fades, so an old line
+// isn't left next to a month card that has moved on. (Screen readers still
+// get every line through the live region.)
+const CAPTION_MS = 4000;
+let captionTimer = null;
+
 function showCaption(line) {
   $("caption").textContent = line.text;
   $("caption").dataset.kind = line.kind;
+  $("caption").classList.remove("faded");
+  clearTimeout(captionTimer);
+  captionTimer = setTimeout(() => $("caption").classList.add("faded"), CAPTION_MS);
   for (const li of $("transcript").children) {
     li.classList.toggle("current", li.dataset.index === String(line.month_index));
   }

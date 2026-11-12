@@ -9,7 +9,8 @@ Built for the [NASA Space Apps Challenge 2026](https://www.spaceappschallenge.or
 Every month from 2006 to 2025 becomes one beat. Temperature becomes a gamelan
 melody, rain becomes drumming, humidity becomes echo, haze muffles a bamboo
 flute, and unusual months ring a gong. On-screen narration explains what
-you're hearing as the song plays.
+you're hearing as the song plays, an animated band plays along, and a
+timeline shows the data under the music.
 
 Everything is free and open: no API keys, no AI models, no paid services.
 The app works offline apart from fetching new places from NASA POWER, and
@@ -44,15 +45,38 @@ Both are already done and committed, so you don't need them for a demo.
 
 ---
 
+## What's on the page
+
+- **Map and city list.** Tap anywhere in Malaysia or pick one of 37 cities.
+  The list follows whatever you tap.
+- **The band.** One player per instrument, moving in time with the music and
+  the data (see the table below). Players brighten while they play and sit
+  dimmed while they rest or are muted.
+- **Narration and month card.** Each narration line shows for about
+  4 seconds, then fades. The card shows the month you're hearing.
+- **Player controls.** Play/Pause, Replay, Tempo (0.5×–2×) and Volume, with a
+  small level meter.
+- **Timeline.** It opens in a **simple view**: one *Big moments* strip with a
+  gong for each story the narration tells. Tap a gong (or anywhere) to jump
+  there. Hovering shows that month in plain words.
+  - **Show the data** opens one lane per layer (temperature, rain, haze,
+    humidity, unusual months), drawn from the data: taller = hotter, wetter,
+    hazier or more humid; brighter bars are unusual months.
+  - **Mixer** adds mute (M), solo (S) and a volume slider to each lane.
+    Closing the mixer puts every sound back to normal.
+  - The page remembers which view you used last.
+
+---
+
 ## How the data becomes music
 
 | NASA POWER data | Sound | On screen |
 |---|---|---|
-| **Temperature** (`T2M`) | Lead melody pitch: hotter = higher, on a slendro-style 5-note scale. The melody moves one step at a time so it sounds like a tune. | Gamelan bars light up / sape strings shake / rebab bow moves |
-| **Rainfall** (`PRECTOTCORR`) | Kompang and gendang drums: rainier months = more hits per beat | Drums bounce, faster when it's rainier |
-| **Humidity** (`RH2M`) | Reverb: muggier months echo more | – |
-| **Haze** (`AOD_55`, aerosol optical depth) | Seruling (bamboo flute) through a low-pass filter; hazy months sound muffled | Flute glows while playing, greys out when hazy |
-| **Unusual months** | Big gong (gong ageng) | Gong shakes and ripples |
+| **Temperature** (`T2M`) | Lead melody pitch: hotter = higher, on a slendro-style 5-note scale. The melody moves one step at a time so it sounds like a tune. | Lead player strikes harder when hotter; gamelan bars light up per note, sape strings shake, rebab bow moves |
+| **Rainfall** (`PRECTOTCORR`) | Kompang and gendang drums: rainier months = more hits per beat | Drummers strike bigger and faster when it's rainier |
+| **Humidity** (`RH2M`) | Reverb: muggier months echo more | Humidity lane on the timeline |
+| **Haze** (`AOD_55`, aerosol optical depth) | Seruling (bamboo flute) through a low-pass filter; hazy months sound muffled | Flute player sways; greys out behind a haze cloud when hazy |
+| **Unusual months** | Big gong (gong ageng) | Gong player takes a big swing; the gong rocks and ripples |
 | **Season** | Northeast monsoon (Nov–Mar): busy drums and extra ornaments. Southwest monsoon (May–Sep): sparse drums, more flute. | Season shown on the "now playing" card |
 
 **Structure.** Each year is one 12-beat gamelan cycle: a kenong (small gong)
@@ -68,8 +92,8 @@ The tempo slider runs from 0.5× to 2×.
 | Kelantan | Rebab (bowed fiddle) |
 | Terengganu and everywhere else | Gamelan (bronze metallophone) |
 
-**Layers.** Buttons under the song let you mute or solo each layer (melody,
-drums, flute, gongs, echo) to hear exactly what each one shows.
+**Layers.** The timeline's mixer lets you mute, solo or turn down each layer
+(melody, drums, flute, gongs, echo) to hear exactly what each one shows.
 
 ### Finding unusual months
 
@@ -105,14 +129,26 @@ events such as specific floods or haze episodes.
   map and use the arrow keys to move, `+`/`−` to zoom and **Enter** to play the
   place under the crosshair. The **City** list offers all 37 cities, grouped by
   state.
-- **Screen readers:** labelled controls, a status message when a song loads,
-  live captions for the narration, and a **text summary** of every song
-  (ranges, unusual periods and trend) with the full narration as a list.
+- **Timeline by keyboard:** the timeline is a slider. Arrow keys move one
+  month, Page Up/Down one year, Home/End to the ends, **N**/**P** to the next
+  or previous big moment, and **Enter** jumps there. Each month is read out in
+  full, e.g. "September 2015, Southwest monsoon (drier). 28.1 °C, 5.6 mm/day
+  rain, 80% humidity, haze 1.80. Hazy." followed by its story, if it has one.
+  This lets screen-reader users explore the 20 years at their own pace.
+- **Screen readers:** labelled controls (each volume slider announces its
+  value), a status message when a song loads, live captions for the
+  narration, and a **text summary** of every song (ranges, unusual periods
+  and trend) with the full narration as a list. The band is decorative; the
+  same information is in the captions, timeline and summary.
+- **Not overwhelming:** the timeline opens in a simple view; the data lanes
+  and mixer are one button away for those who want them.
 - **Skip link** to the player controls.
-- **Play / Pause / Replay**, **tempo** control, and an **Animations on/off**
-  toggle. Animations start off when the system asks for reduced motion.
-- Light and dark mode follow the system setting, with high-contrast text on
-  the accent colour in both.
+- **Motion:** an **Animations on/off** toggle, off by default when the system
+  asks for reduced motion. With animations off, nothing moves, but players
+  still dim when muted and the flute player still greys out in haze.
+- Light and dark mode follow the system setting. Text and the timeline's lane
+  colours were checked for contrast in both (text at least 4.5:1, lane
+  colours at least 3:1), and the small timeline buttons are at least 24 px.
 
 ---
 
@@ -138,8 +174,8 @@ backend/
 public/
   index.html       the page
   js/              app.js (UI), map.js (Leaflet), song.js (data → music),
-                   instruments.js (synths/samplers), animations.js (SVG)
-  svg/             instrument illustrations
+                   instruments.js (synths/samplers), band.js (animated band,
+                   inline SVG), timeline.js (multitrack timeline)
   samples/         your recordings go here
   data/            state outlines and the city list
   vendor/          Tone.js and Leaflet, saved for offline use
@@ -169,5 +205,5 @@ snapped to a 0.5° grid for caching. Interactive docs are at `/docs`.
 - **Libraries:** [Tone.js](https://tonejs.github.io/) (MIT),
   [Leaflet](https://leafletjs.com/) (BSD-2-Clause),
   [FastAPI](https://fastapi.tiangolo.com/) (MIT).
-- **Instrument illustrations:** drawn for this project.
+- **Band illustrations:** drawn for this project.
 - **Instrument recordings:** none bundled yet. Credit any you add here.

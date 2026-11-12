@@ -133,7 +133,7 @@ export function createTimeline(wrapper, { onSeek, describe }) {
         heights[lane].forEach((v, i) => {
           const barH = v * (laneH - 12);
           const standout = beats[i].month.flags.some((f) => flags.includes(f));
-          ctx.globalAlpha = (dimmed.has(lane) ? 0.25 : 1) * (standout ? 1 : 0.55);
+          ctx.globalAlpha = (dimmed.has(lane) ? 0.25 : 1) * (standout ? 1 : 0.75);
           ctx.fillRect(i * monthW, top + laneH - 6 - barH, Math.max(1, monthW - gap), barH);
         });
       }
