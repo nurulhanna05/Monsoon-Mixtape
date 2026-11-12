@@ -1,4 +1,4 @@
-import { createStage } from "./animations.js";
+import { createBand } from "./band.js";
 import { createInstruments, LAYERS } from "./instruments.js";
 import { createMap } from "./map.js";
 import { BASE_BPM, buildBeats, scheduleSong } from "./song.js";
@@ -82,14 +82,23 @@ function showBeat(beat) {
   if (lines.has(beat.index)) showCaption(lines.get(beat.index));
 }
 
-// Short description of a month for the timeline slider, e.g.
-// "March 2014: 27.1 °C, 12.3 mm/day rain, very wet".
+// Plain description of a month, read out by the timeline slider and shown
+// in its tooltip, e.g. "September 2015, Southwest monsoon (drier). 27.9 °C,
+// 5.1 mm/day rain, 85% humidity, haze 1.20. Hazy. <its story, if any>"
 function describeBeat(beat) {
   const m = beat.month;
-  const flags = m.flags.map((f) => FLAG_LABELS[f].toLowerCase());
-  return [`${MONTH_NAMES[m.month - 1]} ${m.year}: ${m.temp.toFixed(1)} °C`,
-    `${m.rain.toFixed(1)} mm/day rain`, ...flags].join(", ");
+  const parts = [
+    `${MONTH_NAMES[m.month - 1]} ${m.year}, ${SEASON_LABELS[m.season]}.`,
+    `${m.temp.toFixed(1)} °C, ${m.rain.toFixed(1)} mm/day rain, ` +
+      `${Math.round(m.humidity)}% humidity, haze ${m.aod.toFixed(2)}.`,
+  ];
+  if (m.flags.length) parts.push(`${m.flags.map((f) => FLAG_LABELS[f]).join(", ")}.`);
+  const line = lines.get(beat.index);
+  if (line && isStory(line)) parts.push(line.text);
+  return parts.join(" ");
 }
+
+const isStory = (line) => line.kind !== "intro" && line.kind !== "summary";
 
 // Jump to a month. Keeps playing (or paused) as it was; after the song has
 // finished, it starts playing from there.
@@ -164,12 +173,11 @@ function ensureAudio() {
 }
 
 function applyLayers() {
-  // Dim timeline lanes that can't be heard.
-  timeline.setDimmed([
-    ...LAYERS.filter((l) => layerState.muted[l] || layerState.volume[l] === 0 ||
-      (layerState.solo && layerState.solo !== l)),
-    ...(layerState.humidity && layerState.volume.humidity ? [] : ["humidity"]),
-  ]);
+  // Dim timeline lanes and band players that can't be heard.
+  const silent = LAYERS.filter((l) => layerState.muted[l] || layerState.volume[l] === 0 ||
+    (layerState.solo && layerState.solo !== l));
+  stage.setDimmed(silent);
+  timeline.setDimmed([...silent, ...(layerState.humidity && layerState.volume.humidity ? [] : ["humidity"])]);
   if (!instruments) return;
   for (const layer of LAYERS) {
     const channel = instruments.channels[layer];
@@ -226,7 +234,7 @@ async function playPlace(lat, lon) {
     beats = buildBeats(song);
     stage.reset(lead);
     scheduleSong(beats, instruments, lead, { onBeat: showBeat, onHit: stage.hit, onEnd });
-    timeline.load(beats);
+    timeline.load(beats, song.narration.filter(isStory).map((l) => l.month_index));
     map.setMarker(lat, lon, song.region.name);
     showNarration(song);
     showSummary(song, lead);
@@ -245,7 +253,7 @@ async function playPlace(lat, lon) {
 
 const towns = await fetch("data/towns.json").then((r) => r.json());
 const map = await createMap("map", towns, playPlace);
-const stage = await createStage($("stage"));
+const stage = createBand($("stage"));
 const timeline = createTimeline(document.querySelector(".lanes"), { onSeek: seekTo, describe: describeBeat });
 
 // Animations: on by default unless the system asks for reduced motion.
@@ -346,5 +354,53 @@ for (const slider of document.querySelectorAll("[data-volume]")) {
     applyLayers();
   });
 }
+
+// Puts every sound back to normal (used when the mixer is closed).
+function resetMixer() {
+  layerState.muted = Object.fromEntries(LAYERS.map((l) => [l, false]));
+  layerState.solo = null;
+  layerState.humidity = true;
+  for (const l of Object.keys(layerState.volume)) layerState.volume[l] = 100;
+  for (const b of document.querySelectorAll("[data-mute], [data-solo]")) b.setAttribute("aria-pressed", "false");
+  for (const slider of document.querySelectorAll("[data-volume]")) {
+    slider.value = 100;
+    slider.setAttribute("aria-valuetext", "100%");
+  }
+  applyLayers();
+}
+
+// Timeline views: simple (story strip only) → data lanes → data + mixer.
+// Remembered per browser, so curious users don't have to reopen it.
+const VIEW_KEY = "monsoon-mixtape-view";
+function setView(showData, mixer) {
+  mixer = showData && mixer;
+  const tracks = document.querySelector(".tracks");
+  tracks.classList.toggle("simple", !showData);
+  tracks.classList.toggle("mixer", mixer);
+  $("show-data").setAttribute("aria-expanded", String(showData));
+  $("show-data").textContent = showData ? "Hide the data" : "Show the data";
+  $("show-mixer").hidden = !showData;
+  $("show-mixer").setAttribute("aria-pressed", String(mixer));
+  $("mixer-note").hidden = !mixer;
+  if (!mixer) resetMixer();
+  try {
+    localStorage.setItem(VIEW_KEY, JSON.stringify({ showData, mixer }));
+  } catch {
+    // Storage blocked (e.g. private window): the view just isn't remembered.
+  }
+}
+$("show-data").addEventListener("click", () => {
+  setView($("show-data").getAttribute("aria-expanded") !== "true", false);
+});
+$("show-mixer").addEventListener("click", () => {
+  setView(true, $("show-mixer").getAttribute("aria-pressed") !== "true");
+});
+let savedView = {};
+try {
+  savedView = JSON.parse(localStorage.getItem(VIEW_KEY)) || {};
+} catch {
+  // Nothing saved, or storage blocked: start in the simple view.
+}
+setView(Boolean(savedView.showData), Boolean(savedView.mixer));
 
 transport.bpm.value = BASE_BPM;

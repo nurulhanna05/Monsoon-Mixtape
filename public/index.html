@@ -35,12 +35,12 @@
 
     <section class="area-stage stage-box" aria-labelledby="stage-heading">
       <div class="stage-head">
-        <h2 id="stage-heading">Instruments</h2>
+        <h2 id="stage-heading">The band</h2>
         <button id="anim-toggle" type="button" aria-pressed="true">Animations: on</button>
       </div>
       <!-- Purely visual; the same information is in the captions and summary. -->
       <div id="stage" aria-hidden="true"></div>
-      <p class="hint">Each instrument appears while it's playing.</p>
+      <p class="hint">Players brighten while they play and sit dimmed while they rest or are muted.</p>
       <p id="caption" aria-live="polite"></p>
     </section>
 
@@ -68,12 +68,24 @@
 
     <section class="area-timeline timeline-box" aria-labelledby="timeline-heading">
       <h2 id="timeline-heading" class="sr-only">Timeline</h2>
-      <div class="tracks">
+      <div class="timeline-bar">
+        <button id="show-data" type="button" aria-expanded="false">Show the data</button>
+        <button id="show-mixer" type="button" aria-pressed="false" hidden>Mixer</button>
+        <span id="mixer-note" class="hint" hidden>Closing the mixer puts every sound back to normal.</span>
+      </div>
+      <!-- Simple view shows only the story strip; "Show the data" adds the
+           data lanes, and "Mixer" adds mute/solo/volume to their headers. -->
+      <div class="tracks simple">
         <!-- Lane headers: ordinary controls, lined up with the canvas lanes. -->
         <div class="lane-heads" role="group" aria-label="Layers: mute, solo or turn down a sound to hear what it shows">
           <div class="lane-ruler" aria-hidden="true"></div>
+          <div class="lane-head" data-lane="story">
+            <span class="lane-name">Big moments</span>
+            <span class="lane-hint">tap a gong to hear its story</span>
+          </div>
           <div class="lane-head" data-lane="melody">
             <span class="lane-name">Temperature <small>melody</small></span>
+            <span class="lane-hint">taller = hotter</span>
             <div class="lane-controls">
               <button type="button" data-mute="melody" aria-pressed="false" aria-label="Mute temperature melody">M</button>
               <button type="button" data-solo="melody" aria-pressed="false" aria-label="Solo temperature melody">S</button>
@@ -82,6 +94,7 @@
           </div>
           <div class="lane-head" data-lane="drums">
             <span class="lane-name">Rain <small>drums</small></span>
+            <span class="lane-hint">taller = wetter</span>
             <div class="lane-controls">
               <button type="button" data-mute="drums" aria-pressed="false" aria-label="Mute rain drums">M</button>
               <button type="button" data-solo="drums" aria-pressed="false" aria-label="Solo rain drums">S</button>
@@ -90,6 +103,7 @@
           </div>
           <div class="lane-head" data-lane="flute">
             <span class="lane-name">Haze <small>flute</small></span>
+            <span class="lane-hint">taller = hazier</span>
             <div class="lane-controls">
               <button type="button" data-mute="flute" aria-pressed="false" aria-label="Mute haze flute">M</button>
               <button type="button" data-solo="flute" aria-pressed="false" aria-label="Solo haze flute">S</button>
@@ -98,6 +112,7 @@
           </div>
           <div class="lane-head" data-lane="humidity">
             <span class="lane-name">Humidity <small>echo</small></span>
+            <span class="lane-hint">taller = more humid</span>
             <div class="lane-controls">
               <button type="button" data-mute="humidity" aria-pressed="false" aria-label="Mute humidity echo">M</button>
               <input type="range" data-volume="humidity" min="0" max="100" step="5" value="100" aria-label="Humidity echo amount" aria-valuetext="100%">
@@ -105,6 +120,7 @@
           </div>
           <div class="lane-head" data-lane="gongs">
             <span class="lane-name">Unusual months <small>gongs</small></span>
+            <span class="lane-hint">gong = unusual period</span>
             <div class="lane-controls">
               <button type="button" data-mute="gongs" aria-pressed="false" aria-label="Mute gongs">M</button>
               <button type="button" data-solo="gongs" aria-pressed="false" aria-label="Solo gongs">S</button>
@@ -117,11 +133,12 @@
           <canvas class="timeline-head" tabindex="0" role="slider" aria-label="Timeline month"
             aria-valuemin="1" aria-valuemax="240" aria-valuenow="1" aria-valuetext="No song loaded"
             aria-disabled="true" aria-describedby="timeline-help"></canvas>
+          <div class="timeline-tip" aria-hidden="true" hidden></div>
         </div>
       </div>
       <p id="timeline-help" class="hint">
-        Click or drag on the timeline to jump to a month. Keyboard: arrow keys move a month, Page Up/Down a year, then press Enter to jump.
-        Brighter bars are unusual months; each gong is an unusual period.
+        Click or drag on the timeline to jump to a month. Keyboard: arrow keys move a month, Page Up/Down a year,
+        N and P go to the next or previous big moment, then press Enter to jump there.
       </p>
     </section>
 

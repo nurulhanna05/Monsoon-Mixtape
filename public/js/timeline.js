@@ -1,11 +1,11 @@
-// Multitrack timeline: one lane per layer, drawn from the data (not the
-// audio), with a playhead that follows the Transport.
+// Multitrack timeline: a "Big moments" strip plus one lane per layer, drawn
+// from the data (not the audio), with a playhead that follows the Transport.
 //
-// Two canvases: the data lanes are drawn once per song (and on resize or a
-// theme change); the top canvas redraws only the playhead each frame, so it
-// stays smooth while music plays. The top canvas is also a keyboard slider.
-
-const LANES = ["melody", "drums", "flute", "humidity", "gongs"];
+// Which lanes show is decided by the page: the lane headers that are visible
+// (simple view = only the story strip). Two canvases: the lanes are drawn
+// once per song (and on resize or a theme change); the top canvas redraws
+// only the playhead each frame, so it stays smooth while music plays. The top
+// canvas is also a keyboard slider.
 
 // Which flags make a month stand out in each lane.
 const LANE_FLAGS = {
@@ -27,11 +27,14 @@ function fromZero(values) {
 }
 
 export function createTimeline(wrapper, { onSeek, describe }) {
+  const tracks = wrapper.closest(".tracks");
   const dataCanvas = wrapper.querySelector(".timeline-data");
   const headCanvas = wrapper.querySelector(".timeline-head");
+  const tooltip = wrapper.querySelector(".timeline-tip");
   const transport = Tone.getTransport();
 
   let beats = [];
+  let stories = []; // month indexes with a narration line, in order
   let heights = {};
   let dimmed = new Set();
   let cursor = 0; // month shown by the slider (keyboard position)
@@ -39,6 +42,9 @@ export function createTimeline(wrapper, { onSeek, describe }) {
   let dragging = false;
 
   const css = (name) => getComputedStyle(wrapper).getPropertyValue(name).trim();
+  const visibleLanes = () => [...tracks.querySelectorAll(".lane-head")]
+    .filter((el) => el.offsetParent !== null)
+    .map((el) => el.dataset.lane);
 
   function size() {
     const ratio = window.devicePixelRatio || 1;
@@ -52,23 +58,36 @@ export function createTimeline(wrapper, { onSeek, describe }) {
     return { w, h, rulerH: parseFloat(css("--ruler-h")), laneH: parseFloat(css("--lane-h")) };
   }
 
+  function gongIcon(ctx, x, y, r) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath(); // the gong's raised boss
+    ctx.arc(x, y, r * 0.35, 0, Math.PI * 2);
+    ctx.strokeStyle = css("--card");
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
   function drawData() {
     const { w, h, rulerH, laneH } = size();
+    const lanes = visibleLanes();
     const ctx = dataCanvas.getContext("2d");
     ctx.clearRect(0, 0, w, h);
     const border = css("--border");
     const muted = css("--muted");
+    lastX = null; // force the playhead to redraw on the fresh canvas
+    tooltip.hidden = true; // the layout moved under it
 
     // Lane separators.
     ctx.fillStyle = border;
-    for (let i = 0; i <= LANES.length; i++) ctx.fillRect(0, rulerH + i * laneH, w, 1);
+    for (let i = 0; i <= lanes.length; i++) ctx.fillRect(0, rulerH + i * laneH, w, 1);
 
     if (!beats.length) {
       ctx.fillStyle = muted;
       ctx.font = "14px system-ui, sans-serif";
       ctx.textBaseline = "middle";
       ctx.fillText("Play a place to see its 20 years here.", 8, rulerH + laneH / 2);
-      lastX = null;
       return;
     }
 
@@ -92,26 +111,22 @@ export function createTimeline(wrapper, { onSeek, describe }) {
       }
     });
 
-    LANES.forEach((lane, li) => {
+    lanes.forEach((lane, li) => {
       const top = rulerH + li * laneH;
+      const mid = top + laneH / 2;
       ctx.globalAlpha = dimmed.has(lane) ? 0.25 : 1;
       ctx.fillStyle = css(`--lane-${lane}`);
 
-      if (lane === "gongs") {
-        const mid = top + laneH / 2;
+      if (lane === "story") {
+        // One marker per narration line: the stories worth listening for.
+        ctx.fillRect(0, mid, w, 1);
+        for (const i of stories) gongIcon(ctx, (i + 0.5) * monthW, mid, 8);
+      } else if (lane === "gongs") {
         beats.forEach((b, i) => {
           const x = (i + 0.5) * monthW;
           if (b.kempul) ctx.fillRect(Math.round(x), mid - 4, 1, 8); // year-end kempul
-          if (!b.gong) return;
-          const r = Math.min(laneH / 2 - 6, 5 + b.gong.severity); // bigger = more unusual
-          ctx.beginPath();
-          ctx.arc(x, mid, r, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.beginPath(); // the gong's raised boss
-          ctx.arc(x, mid, r * 0.35, 0, Math.PI * 2);
-          ctx.strokeStyle = css("--card");
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
+          // Bigger = more unusual.
+          if (b.gong) gongIcon(ctx, x, mid, Math.min(laneH / 2 - 6, 5 + b.gong.severity));
         });
       } else {
         const flags = LANE_FLAGS[lane];
@@ -124,7 +139,6 @@ export function createTimeline(wrapper, { onSeek, describe }) {
       }
     });
     ctx.globalAlpha = 1;
-    lastX = null; // force the playhead to redraw on the fresh canvas
   }
 
   // Months played so far, at the moment you hear them (transport.ticks runs
@@ -179,14 +193,36 @@ export function createTimeline(wrapper, { onSeek, describe }) {
     headCanvas.setAttribute("aria-valuetext", describe(beats[index]));
   }
 
+  // Month under the pointer. On the story strip, snap to a nearby marker so
+  // the dots are easy to hit with a finger.
   function indexAt(event) {
     const rect = headCanvas.getBoundingClientRect();
-    return Math.floor(((event.clientX - rect.left) / rect.width) * beats.length);
+    const monthW = rect.width / beats.length;
+    const index = Math.floor((event.clientX - rect.left) / monthW);
+    const rulerH = parseFloat(css("--ruler-h"));
+    const laneH = parseFloat(css("--lane-h"));
+    const lane = visibleLanes()[Math.floor((event.clientY - rect.top - rulerH) / laneH)];
+    if (lane === "story") {
+      const near = stories.find((i) => Math.abs(i - index) * monthW <= 12);
+      if (near !== undefined) return near;
+    }
+    return Math.max(0, Math.min(beats.length - 1, index));
   }
 
   function seek(index) {
     setCursor(index);
     onSeek(cursor);
+  }
+
+  // Hover tooltip (mouse only; touch already updates the month card).
+  function showTip(event) {
+    const index = indexAt(event);
+    const rect = wrapper.getBoundingClientRect();
+    tooltip.textContent = describe(beats[index]);
+    tooltip.hidden = false;
+    const x = event.clientX - rect.left;
+    tooltip.style.left = `${Math.min(x + 12, rect.width - tooltip.offsetWidth)}px`;
+    tooltip.style.top = `${Math.max(0, event.clientY - rect.top - tooltip.offsetHeight - 12)}px`;
   }
 
   // Click, tap or drag to jump. pan-y in the CSS keeps vertical page scroll.
@@ -197,22 +233,31 @@ export function createTimeline(wrapper, { onSeek, describe }) {
     seek(indexAt(e));
   });
   headCanvas.addEventListener("pointermove", (e) => {
+    if (!beats.length) return;
     if (dragging && indexAt(e) !== cursor) seek(indexAt(e));
+    if (e.pointerType === "mouse") showTip(e);
   });
   const stopDrag = () => { dragging = false; };
   headCanvas.addEventListener("pointerup", stopDrag);
   headCanvas.addEventListener("pointercancel", stopDrag);
+  headCanvas.addEventListener("pointerleave", () => { tooltip.hidden = true; });
 
-  // Keyboard: move the cursor, Enter jumps there.
+  // Keyboard: move the cursor, N/P hop between big moments, Enter jumps.
   headCanvas.addEventListener("keydown", (e) => {
     if (!beats.length) return;
     const moves = {
       ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1,
       PageDown: -12, PageUp: 12, Home: -Infinity, End: Infinity,
     };
+    const key = e.key.toLowerCase();
     if (e.key in moves) {
       const step = moves[e.key];
       setCursor(Number.isFinite(step) ? cursor + step : step < 0 ? 0 : beats.length - 1);
+    } else if (key === "n" || key === "p") {
+      const next = key === "n"
+        ? stories.find((i) => i > cursor)
+        : [...stories].reverse().find((i) => i < cursor);
+      if (next !== undefined) setCursor(next);
     } else if (e.key === "Enter" || e.key === " ") {
       onSeek(cursor);
     } else {
@@ -227,8 +272,9 @@ export function createTimeline(wrapper, { onSeek, describe }) {
   drawHead();
 
   return {
-    load(newBeats) {
+    load(newBeats, storyIndexes) {
       beats = newBeats;
+      stories = storyIndexes;
       const months = beats.map((b) => b.month);
       heights = {
         melody: minMax(months.map((m) => m.temp)),

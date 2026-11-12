@@ -11,7 +11,9 @@ export const LEADS = ["gamelan", "sape", "rebab"];
 // a clock that nudges such notes a few milliseconds later instead.
 function monotonic() {
   let last = -1;
-  return (time) => (last = Math.max(time, last + 0.005));
+  // Never in the past either: Tone moves late notes to "now", which could
+  // put two of them at the same instant (after a seek or a busy moment).
+  return (time) => (last = Math.max(time, last + 0.005, Tone.immediate() + 0.005));
 }
 
 // Load /samples/<name>/ as a Tone.Sampler, or return null to use the synth.

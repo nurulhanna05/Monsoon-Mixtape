@@ -10,7 +10,9 @@
 - [x] Phase 1: two-column layout and transport bar
 - [x] Phase 2: master + per-lane volume, level meter
 - [x] Phase 3: multitrack timeline with playhead and seeking
-- [ ] Phase 4: animated band driven by the data
+- [x] Phase 3b: simple view first (big-moments strip), "Show the data" and
+  "Mixer" to open more; hover tooltips; fuller screen-reader readout
+- [x] Phase 4: animated band driven by the data
 - [ ] Phase 5: narration timing fix, accessibility check, README update
 
 ## Before the hackathon (14–15 Nov)

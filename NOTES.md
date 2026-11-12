@@ -41,15 +41,23 @@ restart the server (auto-reload sometimes misses changes on Windows).
   crosshair), skip link, screen-reader labels, live captions, text summary of
   every song, dark-mode contrast fix. Full `README.md` with setup, mapping
   and credits.
-- **UI redesign phases 1–3 (12 Nov), plan in `TODO.md`:** master Volume slider with a live level
+- **UI redesign phases 1–3b (12–13 Nov), plan in `TODO.md`:** master Volume slider with a live level
   meter, a volume slider for each layer (humidity slider = echo amount);
   two-column layout on wide screens, one column on phones. Multitrack
   timeline (`public/js/timeline.js`): a lane per layer drawn from the data,
   gongs for unusual periods, playhead; click, drag or keys to jump.
+  Opens in a simple view (one "Big moments" strip, a gong per narration
+  story) so it isn't overwhelming; "Show the data" adds the lanes and
+  "Mixer" adds mute/solo/volume. The view is remembered per browser.
+- **Phase 4 (13 Nov): animated band** (`public/js/band.js`, inline SVG; the
+  old `animations.js` and `public/svg/` were removed). One seated player per
+  instrument, all drawn as Rimau (the Space Apps KL tiger-astronaut
+  mascot; our own simple drawing, not the official art); strikes are bigger/faster in rainier months, the lead is
+  livelier when hotter, the flute player greys out in haze, big gongs get a
+  big swing and ripples. Resting or muted players dim; Animations off stops all motion.
 
 ## What's left
-- UI redesign phases 4–5 (animated band; narration fade, accessibility
-  check, README). Then the pre-hackathon checks. Both lists are in `TODO.md`.
+- UI redesign phase 5 (narration fade, accessibility check, README). Then the pre-hackathon checks. Both lists are in `TODO.md`.
 
 ## Ideas for later
 - "Compare two places" mode.
