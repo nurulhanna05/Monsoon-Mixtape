@@ -18,20 +18,27 @@ let setup = null;
 let handlers = { onBeat() {}, onHit() {}, onEnd() {} };
 const layerOn = { melody: true, drums: true, flute: true, gongs: true, humidity: true };
 
-// Browsers only allow sound after a tap or key press. Flutter handles taps
-// a moment after the browser event, so also unlock audio on the very first
-// press anywhere on the page.
+// Set up the instruments once. This doesn't wait for sound to be allowed:
+// on phones that would hang until the next tap.
 function prepare() {
-  setup ??= Tone.start()
-    .then(createInstruments)
-    .then((inst) => {
-      instruments = inst;
-      applyLayers();
-    });
+  setup ??= createInstruments().then((inst) => {
+    instruments = inst;
+    applyLayers();
+  });
   return setup;
 }
-for (const type of ["pointerdown", "keydown"]) {
-  window.addEventListener(type, () => prepare(), { once: true, capture: true });
+
+// Browsers only allow sound after a tap or key press, and Flutter handles
+// taps a moment after the browser event, so unlock it straight from the
+// page's own events. Phones only count a touch as a tap when the finger
+// lifts (pointerup/touchend), so listen for those too, and keep trying
+// until the sound is actually running.
+function unlock() {
+  if (Tone.getContext().state !== "running") Tone.start();
+  prepare();
+}
+for (const type of ["pointerdown", "pointerup", "touchend", "click", "keydown"]) {
+  window.addEventListener(type, unlock, { capture: true, passive: true });
 }
 
 function applyLayers() {
