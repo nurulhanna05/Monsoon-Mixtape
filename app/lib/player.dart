@@ -167,15 +167,15 @@ class _Playing extends StatelessWidget {
           return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             nowPlaying,
             const SizedBox(height: 16),
-            Highway(mixtape: mixtape, height: 360),
+            Highway(mixtape: mixtape, height: 470),
           ]);
         }
         return SizedBox(
-          height: 350,
+          height: 470,
           child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Expanded(flex: 5, child: nowPlaying),
+            Expanded(flex: 4, child: nowPlaying),
             const SizedBox(width: 16),
-            Expanded(flex: 4, child: Highway(mixtape: mixtape, height: 350)),
+            Expanded(flex: 5, child: Highway(mixtape: mixtape, height: 470)),
           ]),
         );
       }),
@@ -568,6 +568,13 @@ class _Controls extends StatelessWidget {
           ),
         ]),
         Row(mainAxisSize: MainAxisSize.min, children: [
+          IconButton(
+            onPressed: mixtape.toggleNarrator,
+            isSelected: mixtape.narrator,
+            tooltip: mixtape.narrator ? 'Narrator voice: on' : 'Narrator voice: off',
+            icon: Icon(Icons.voice_over_off_rounded, color: c.muted),
+            selectedIcon: Icon(Icons.record_voice_over_rounded, color: c.blue),
+          ),
           Icon(mixtape.volume == 0 ? Icons.volume_off_rounded : Icons.volume_up_rounded, color: c.blue, size: 22),
           SizedBox(
             width: 150,

@@ -33,6 +33,7 @@ class Mixtape extends ChangeNotifier {
   bool finished = false;
   String? error;
 
+  bool narrator = true; // speak the narration out loud
   double tempo = 1;
   double volume = 80;
   final layerOn = {for (final t in tiles) t: true};
@@ -75,6 +76,7 @@ class Mixtape extends ChangeNotifier {
   Future<void> pick(double lat, double lon, {String? name}) async {
     final id = ++_request;
     audio.stop();
+    audio.hush();
     audio.prepare(); // start audio during the tap itself
     picked = LatLng(lat, lon);
     pickedName = name;
@@ -113,6 +115,7 @@ class Mixtape extends ChangeNotifier {
     }
     if (playing) {
       audio.pause();
+      audio.hush();
       playing = false;
     } else {
       if (finished) {
@@ -134,6 +137,7 @@ class Mixtape extends ChangeNotifier {
   void seek(int i) {
     if (song == null) return;
     index = i.clamp(0, song!.months.length - 1);
+    audio.hush();
     audio.seek(index);
     playing = true;
     finished = false;
@@ -161,6 +165,12 @@ class Mixtape extends ChangeNotifier {
     notifyListeners();
   }
 
+  void toggleNarrator() {
+    narrator = !narrator;
+    if (!narrator) audio.hush();
+    notifyListeners();
+  }
+
   void toggleLayer(String layer) {
     layerOn[layer] = !layerOn[layer]!;
     audio.setLayer(layer, layerOn[layer]!);
@@ -169,6 +179,11 @@ class Mixtape extends ChangeNotifier {
 
   void _onBeat(int i) {
     index = i;
+    if (narrator) {
+      for (final line in song?.lines ?? const <Line>[]) {
+        if (line.index == i) audio.speak(line.text);
+      }
+    }
     notifyListeners();
   }
 

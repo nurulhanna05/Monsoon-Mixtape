@@ -1,6 +1,7 @@
-// The rhythm-game stage: every note in the song falls down its lane and
-// lands on the target arrow exactly when you hear it. Nobody has to press
-// anything; it's a way to *see* each month of data land.
+// The rhythm-game stage: the band plays on top, and every note in the song
+// falls down its lane and lands on the target arrow exactly when you hear
+// it. Nobody has to press anything; it's a way to *see* each month of data
+// land.
 //
 // Notes come from the same beats the music is scheduled from (built in
 // audio_bridge.js), and are drawn each frame from the audio position.
@@ -30,7 +31,7 @@ const _hit = 0.03; // beats after landing before a note disappears
 Color _laneColor(String lane) => night.tiles[lane]!;
 
 class Highway extends StatefulWidget {
-  const Highway({super.key, required this.mixtape, this.height = 380});
+  const Highway({super.key, required this.mixtape, this.height = 480});
 
   final Mixtape mixtape;
   final double height;
@@ -114,16 +115,28 @@ class _HighwayState extends State<Highway> with SingleTickerProviderStateMixin {
             ),
           ),
           child: Column(children: [
+            // The band from the classic page, playing along on stage.
+            SizedBox(
+              height: 118,
+              child: HtmlElementView.fromTagName(
+                tagName: 'div',
+                isVisible: true,
+                onElementCreated: m.audio.mountBand,
+              ),
+            ),
             Expanded(
-              child: CustomPaint(
-                size: Size.infinite,
-                painter: _HighwayPainter(
-                  song: m.song,
-                  chart: m.chart,
-                  pos: stepped ? _pos.floorToDouble() : _pos,
-                  flash: Map.of(_flash),
-                  big: Map.of(_big),
-                  layerOn: Map.of(m.layerOn),
+              // Clipped so long flute notes don't draw over the band.
+              child: ClipRect(
+                child: CustomPaint(
+                  size: Size.infinite,
+                  painter: _HighwayPainter(
+                    song: m.song,
+                    chart: m.chart,
+                    pos: stepped ? _pos.floorToDouble() : _pos,
+                    flash: Map.of(_flash),
+                    big: Map.of(_big),
+                    layerOn: Map.of(m.layerOn),
+                  ),
                 ),
               ),
             ),
@@ -170,8 +183,13 @@ class _HighwayPainter extends CustomPainter {
 
   // One chunky arrow pointing up, in units of its radius.
   static const _arrow = [
-    Offset(0, -1), Offset(0.9, -0.05), Offset(0.38, -0.05), Offset(0.38, 0.85),
-    Offset(-0.38, 0.85), Offset(-0.38, -0.05), Offset(-0.9, -0.05),
+    Offset(0, -1),
+    Offset(0.9, -0.05),
+    Offset(0.38, -0.05),
+    Offset(0.38, 0.85),
+    Offset(-0.38, 0.85),
+    Offset(-0.38, -0.05),
+    Offset(-0.9, -0.05),
   ];
 
   // A few faint stars, the same every frame.
@@ -191,16 +209,20 @@ class _HighwayPainter extends CustomPainter {
       {double stroke = 2.5, double opacity = 1, double glow = 0}) {
     final path = _arrowPath(c, r, lane);
     if (glow > 0) {
-      canvas.drawPath(path, Paint()
-        ..color = fill.withValues(alpha: 0.8 * opacity)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, glow));
+      canvas.drawPath(
+          path,
+          Paint()
+            ..color = fill.withValues(alpha: 0.8 * opacity)
+            ..maskFilter = MaskFilter.blur(BlurStyle.normal, glow));
     }
     canvas.drawPath(path, Paint()..color = fill.withValues(alpha: opacity));
-    canvas.drawPath(path, Paint()
-      ..color = Colors.white.withValues(alpha: 0.9 * opacity)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeJoin = StrokeJoin.round);
+    canvas.drawPath(
+        path,
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.9 * opacity)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = stroke
+          ..strokeJoin = StrokeJoin.round);
   }
 
   @override
@@ -214,7 +236,8 @@ class _HighwayPainter extends CustomPainter {
     double xOf(String lane) => (_lanes.indexOf(lane) + 0.5) * laneW;
 
     for (final (p, b) in _stars) {
-      canvas.drawCircle(Offset(p.dx * w, p.dy * h), 0.6 + b, Paint()..color = Colors.white.withValues(alpha: 0.15 + b * 0.25));
+      canvas.drawCircle(
+          Offset(p.dx * w, p.dy * h), 0.6 + b, Paint()..color = Colors.white.withValues(alpha: 0.15 + b * 0.25));
     }
     // Lane dividers.
     for (var i = 1; i < _lanes.length; i++) {
@@ -229,16 +252,20 @@ class _HighwayPainter extends CustomPainter {
       final grow = 1 + f * (big[l]! ? 0.35 : 0.12);
       final path = _arrowPath(Offset(xOf(l), hitY), r * 1.12 * grow, l);
       if (f > 0 && on) {
-        canvas.drawPath(path, Paint()
-          ..color = color.withValues(alpha: f * 0.9)
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, big[l]! ? 22 : 10));
+        canvas.drawPath(
+            path,
+            Paint()
+              ..color = color.withValues(alpha: f * 0.9)
+              ..maskFilter = MaskFilter.blur(BlurStyle.normal, big[l]! ? 22 : 10));
         canvas.drawPath(path, Paint()..color = color.withValues(alpha: f * 0.6));
       }
-      canvas.drawPath(path, Paint()
-        ..color = on ? color.withValues(alpha: 0.85) : Colors.white24
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3
-        ..strokeJoin = StrokeJoin.round);
+      canvas.drawPath(
+          path,
+          Paint()
+            ..color = on ? color.withValues(alpha: 0.85) : Colors.white24
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 3
+            ..strokeJoin = StrokeJoin.round);
     }
 
     final s = song;
@@ -259,13 +286,14 @@ class _HighwayPainter extends CustomPainter {
       if (t < 0 || t >= s.months.length) continue;
       final y = yAt(t.toDouble()).roundToDouble();
       final january = s.months[t].month == 1;
-      canvas.drawRect(Rect.fromLTWH(0, y, w, 1),
-          Paint()..color = Colors.white.withValues(alpha: january ? 0.35 : 0.08));
+      canvas.drawRect(
+          Rect.fromLTWH(0, y, w, 1), Paint()..color = Colors.white.withValues(alpha: january ? 0.35 : 0.08));
       if (january) {
         final tp = TextPainter(
           text: TextSpan(
               text: '${s.months[t].year}',
-              style: const TextStyle(fontFamily: 'Poppins', color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600)),
+              style: const TextStyle(
+                  fontFamily: 'Poppins', color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600)),
           textDirection: TextDirection.ltr,
         )..layout();
         tp.paint(canvas, Offset(4, y - tp.height - 2));
@@ -310,7 +338,8 @@ class _HighwayPainter extends CustomPainter {
           );
           if (pos < n.at + _hit) _drawArrow(canvas, c, r, n.lane, tail, opacity: opacity);
         case 'tick' || 'kempul':
-          _drawArrow(canvas, c, r * (n.kind == 'tick' ? 0.45 : 0.65), n.lane, color, stroke: 1.5, opacity: 0.75 * opacity);
+          _drawArrow(canvas, c, r * (n.kind == 'tick' ? 0.45 : 0.65), n.lane, color,
+              stroke: 1.5, opacity: 0.75 * opacity);
         case 'gong':
           // Unusual month: a big glowing arrow, bigger when more unusual.
           _drawArrow(canvas, c, r * min(1.45, 1.1 + n.severity * 0.05), n.lane, color, opacity: opacity, glow: 14);

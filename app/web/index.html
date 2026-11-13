@@ -20,6 +20,28 @@
       #loading { color: #9DBBFF; }
       #loading span { border-color: #1C2B55; border-top-color: #FF7A66; }
     }
+    /* The band (band.js) standing on the rhythm stage, above the note lanes. */
+    .band-stage {
+      display: flex; justify-content: center; align-items: flex-end; gap: 2px;
+      height: 100%; box-sizing: border-box; padding: 6px 6px 0; pointer-events: none;
+      border-bottom: 5px solid #E4002B;
+      background: linear-gradient(to bottom, transparent 55%, rgba(252, 61, 33, 0.18));
+      font-family: Poppins, system-ui, sans-serif;
+    }
+    .band-stage .player {
+      flex: 1 1 0; max-width: 110px; margin: 0; text-align: center;
+      opacity: 0.55; transition: opacity 0.3s, filter 0.3s;
+    }
+    .band-stage .player.active { opacity: 1; }
+    .band-stage .player.muted { opacity: 0.2; filter: grayscale(1); }
+    .band-stage .player[hidden] { display: none; }
+    .band-stage .player svg { display: block; width: 100%; height: auto; max-height: 92px; overflow: visible; }
+    .band-stage .player figcaption { color: #fff; font-size: 10px; font-weight: 600; line-height: 1.6; }
+    .band-stage .player figcaption small { display: none; }
+    .band-stage .player .haze { opacity: 0; transition: opacity 0.4s; }
+    .band-stage .player-seruling.hazy svg { filter: grayscale(0.9); }
+    .band-stage .player-seruling.hazy .haze { opacity: 0.55; }
+    .band-stage.no-motion .player, .band-stage.no-motion .haze { transition: none; }
     @keyframes spin { to { transform: rotate(360deg); } }
     @media (prefers-reduced-motion: reduce) { #loading span { display: block; animation: none; } }
   </style>

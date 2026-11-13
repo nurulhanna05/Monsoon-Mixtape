@@ -4,6 +4,7 @@
 //
 // Exposes window.mixtapeAudio for Dart (see lib/audio.dart).
 
+import { createBand } from "../js/band.js";
 import { createInstruments, LAYERS } from "../js/instruments.js";
 import { BASE_BPM, buildBeats, scheduleSong } from "../js/song.js";
 
@@ -11,6 +12,8 @@ const transport = Tone.getTransport();
 transport.bpm.value = BASE_BPM;
 
 let instruments = null;
+let band = null; // the animated players on the stage (band.js), once mounted
+let lead = "gamelan";
 let setup = null;
 let handlers = { onBeat() {}, onHit() {}, onEnd() {} };
 const layerOn = { melody: true, drums: true, flute: true, gongs: true, humidity: true };
@@ -32,6 +35,7 @@ for (const type of ["pointerdown", "keydown"]) {
 }
 
 function applyLayers() {
+  band?.setDimmed(LAYERS.filter((l) => !layerOn[l]));
   if (!instruments) return;
   for (const layer of LAYERS) instruments.channels[layer].mute = !layerOn[layer];
   instruments.echoLevel = layerOn.humidity ? 1 : 0;
@@ -66,14 +70,78 @@ function buildChart(beats) {
   return notes.sort((a, b) => a.at - b.at);
 }
 
+// ---------- Spoken narration ----------
+// Lines recorded with Qwen3-TTS (scripts/record_narration.py) play from
+// /narration/; anything else uses the browser's own voice. While the
+// narrator talks, the music dips a little.
+
+const NARRATION_URL = new URL("../narration/", import.meta.url);
+let recordings = {}; // narration text -> file
+fetch(new URL("manifest.json", NARRATION_URL))
+  .then((r) => (r.ok ? r.json() : {}))
+  .then((m) => (recordings = m))
+  .catch(() => {}); // no recordings: the browser voice reads everything
+
+let voiceVolume = 0.8;
+let speaking = null; // { stop() } for the line being spoken
+let waiting = null; // the newest line that arrived mid-sentence
+
+function duck(on) {
+  if (!instruments) return;
+  for (const layer of LAYERS) instruments.channels[layer].volume.rampTo(on ? -9 : 0, 0.4);
+}
+
+function say(text) {
+  duck(true);
+  const done = () => {
+    speaking = null;
+    if (waiting) {
+      const next = waiting;
+      waiting = null;
+      say(next);
+    } else {
+      duck(false);
+    }
+  };
+  const file = recordings[text];
+  if (file) {
+    const clip = new Audio(new URL(file, NARRATION_URL).href);
+    clip.volume = voiceVolume;
+    clip.onended = clip.onerror = done;
+    speaking = { stop: () => { clip.onended = clip.onerror = null; clip.pause(); } };
+    clip.play().catch(done);
+  } else if ("speechSynthesis" in window) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "en-GB";
+    utterance.rate = 0.95;
+    utterance.volume = voiceVolume;
+    utterance.onend = utterance.onerror = done;
+    speaking = { stop: () => { utterance.onend = utterance.onerror = null; speechSynthesis.cancel(); } };
+    speechSynthesis.speak(utterance);
+  } else {
+    done();
+  }
+}
+
 function hit(name, info) {
   // Group the instruments into the four tiles the app shows.
   const tile = { lead: "melody", kompang: "drums", gendang: "drums", seruling: "flute", gong: "gongs" }[name];
   if (tile) handlers.onHit(tile, Boolean(info.big));
+  band?.hit(name, info);
 }
 
 window.mixtapeAudio = {
   prepare,
+
+  // Put the band.js players into an element Flutter made for them. Called
+  // again if the stage is rebuilt (e.g. the window is resized).
+  mountBand(element) {
+    element.className = "band-stage";
+    band = createBand(element);
+    band.reset(lead);
+    band.setEnabled(!window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    applyLayers();
+  },
 
   setHandlers(onBeat, onHit, onEnd) {
     handlers = { onBeat, onHit, onEnd };
@@ -85,6 +153,8 @@ window.mixtapeAudio = {
     await prepare();
     const song = JSON.parse(json);
     const beats = buildBeats(song);
+    lead = song.region.lead_instrument;
+    band?.reset(lead);
     transport.stop();
     scheduleSong(beats, instruments, song.region.lead_instrument, {
       onBeat: (beat) => handlers.onBeat(beat.index),
@@ -129,6 +199,21 @@ window.mixtapeAudio = {
   },
   setVolume(percent) {
     Tone.getDestination().volume.value = percentToDb(percent);
+    voiceVolume = (percent / 100) ** 2;
+  },
+
+  // Speak a narration line; if one is still being spoken, this one waits
+  // (only the newest waits, so the voice never falls far behind).
+  speak(text) {
+    if (speaking) waiting = text;
+    else say(text);
+  },
+  // Stop talking (pause, jump, new place, narrator turned off).
+  hush() {
+    waiting = null;
+    speaking?.stop();
+    speaking = null;
+    duck(false);
   },
   setLayer(layer, on) {
     layerOn[layer] = on;
