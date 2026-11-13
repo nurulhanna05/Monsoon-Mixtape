@@ -17,9 +17,14 @@ function monotonic() {
 }
 
 // Load /samples/<name>/ as a Tone.Sampler, or return null to use the synth.
+// Paths are relative to this file, so pages in other folders (the Flutter
+// app in /app/) find the same recordings.
+const SAMPLES_URL = new URL("../samples/", import.meta.url);
+
 async function loadSampler(name, destination) {
   try {
-    const resp = await fetch(`samples/${name}/manifest.json`);
+    const folder = new URL(`${name}/`, SAMPLES_URL).href;
+    const resp = await fetch(`${folder}manifest.json`);
     if (!resp.ok) return null;
     const manifest = await resp.json();
     const urls = manifest.notes || {};
@@ -28,7 +33,7 @@ async function loadSampler(name, destination) {
     const sampler = await new Promise((resolve, reject) => {
       const s = new Tone.Sampler({
         urls,
-        baseUrl: `samples/${name}/`,
+        baseUrl: folder,
         release: manifest.release ?? 1,
         volume: manifest.volume ?? -6,
         onload: () => resolve(s),

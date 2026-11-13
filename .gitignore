@@ -7,3 +7,9 @@ venv/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Flutter (the built app in public/app/ is committed so the demo needs no Flutter)
+app/.dart_tool/
+app/build/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies

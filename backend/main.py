@@ -6,6 +6,7 @@ from pathlib import Path
 from urllib.error import URLError
 
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend import analysis, narration, power, regions
@@ -58,6 +59,15 @@ def song(
         "trend": trend,
         "narration": narration.build(region, data["months"], anomalies, trend),
     }
+
+
+# The Flutter app (built into public/app/) is the front page on this
+# branch; the classic page is still at /index.html.
+@app.get("/", include_in_schema=False)
+def front_page():
+    if (PUBLIC_DIR / "app" / "index.html").exists():
+        return RedirectResponse("/app/")
+    return RedirectResponse("/index.html")
 
 
 # Serve the frontend (added in Phase 2) from the same server.

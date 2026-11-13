@@ -15,6 +15,11 @@
 - [x] Phase 4: animated band driven by the data
 - [x] Phase 5: narration timing fix, accessibility check, README update
 
+## Casual Flutter UI (branch `alternative`, 13 Nov)
+- [x] Flutter app in `app/`, built into `public/app/`, NASA colours; the
+  front page opens it, classic page at /index.html
+- Listen through it on a phone-sized screen and check the tiles and controls
+
 ## Before the hackathon (14–15 Nov)
 - Listen through a few cities and tweak sounds if needed
 - Add licensed recordings to `public/samples/` (optional; synths work)

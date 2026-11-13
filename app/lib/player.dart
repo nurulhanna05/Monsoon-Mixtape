@@ -1,0 +1,599 @@
+// Step 2: listen. The month you're hearing, what the narrator says, one
+// tile per instrument (tap to turn it off), a timeline and big controls.
+
+import 'package:material_ui/material_ui.dart';
+
+import 'mixtape.dart';
+import 'models.dart';
+import 'place_picker.dart';
+import 'theme.dart';
+import 'words.dart';
+
+class Player extends StatelessWidget {
+  const Player({super.key, required this.mixtape});
+
+  final Mixtape mixtape;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: ListenableBuilder(
+          listenable: mixtape,
+          builder: (context, _) {
+            final song = mixtape.song;
+            return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              const StepTitle(number: 2, text: 'Listen'),
+              const SizedBox(height: 16),
+              if (mixtape.error != null)
+                _Message(
+                  icon: Icons.cloud_off_rounded,
+                  title: "Couldn't load this place",
+                  text: '${mixtape.error}\nTry one of the city buttons: they work without internet.',
+                  color: nasaRed,
+                )
+              else if (mixtape.loading)
+                _Message(
+                  icon: Icons.satellite_alt_rounded,
+                  title: 'Asking NASA about ${mixtape.pickedName ?? 'this place'}…',
+                  text: 'Fetching 20 years of satellite weather data.',
+                  busy: true,
+                )
+              else if (song == null)
+                const _Message(
+                  icon: Icons.headphones_rounded,
+                  title: 'Pick a place to start',
+                  text: 'Turn your sound on, then choose a city or tap the map.\n'
+                      'The song starts by itself.',
+                )
+              else
+                _Playing(mixtape: mixtape, song: song),
+            ]);
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _Message extends StatelessWidget {
+  const _Message({required this.icon, required this.title, required this.text, this.color = nasaBlue, this.busy = false});
+
+  final IconData icon;
+  final String title;
+  final String text;
+  final Color color;
+  final bool busy;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 56, horizontal: 24),
+        decoration: BoxDecoration(color: paper, borderRadius: BorderRadius.circular(20)),
+        child: Column(children: [
+          SizedBox(
+            width: 96,
+            height: 96,
+            child: Stack(alignment: Alignment.center, children: [
+              if (busy) const SizedBox.expand(child: CircularProgressIndicator(strokeWidth: 4, color: nasaRed)),
+              CircleAvatar(
+                radius: 38,
+                backgroundColor: color,
+                foregroundColor: Colors.white,
+                child: Icon(icon, size: 38),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 18),
+          Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 6),
+          Text(text, textAlign: TextAlign.center, style: const TextStyle(color: muted, fontSize: 15, height: 1.5)),
+        ]),
+      ),
+    );
+  }
+}
+
+class _Playing extends StatelessWidget {
+  const _Playing({required this.mixtape, required this.song});
+
+  final Mixtape mixtape;
+  final Song song;
+
+  @override
+  Widget build(BuildContext context) {
+    final m = song.months[mixtape.index];
+    // A story stays up for about 4 seconds (16 months); after that the
+    // bubble points ahead to the next one instead.
+    final line = song.lineAt(mixtape.index);
+    final next = song.stories.where((l) => l.index > mixtape.index).firstOrNull;
+    final fresh = mixtape.index - line.index < 16 || line.kind == 'summary' || next == null;
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      // Place and quick facts.
+      Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 12, runSpacing: 4, children: [
+        Text(song.place, style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w800, height: 1.1)),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 3),
+          child: Text('${song.start}–${song.end} · played on the ${leadNames[song.lead]}',
+              style: const TextStyle(color: muted, fontSize: 15)),
+        ),
+      ]),
+      const SizedBox(height: 12),
+      Wrap(spacing: 8, runSpacing: 8, children: [
+        _Fact(Icons.thermostat_rounded, song.tempChange >= 0
+            ? '${song.tempChange.toStringAsFixed(1)}°C warmer than in ${song.start}'
+            : '${(-song.tempChange).toStringAsFixed(1)}°C cooler than in ${song.start}'),
+        _Fact(Icons.wb_sunny_rounded, 'Hottest year: ${song.hottestYear}'),
+        _Fact(Icons.umbrella_rounded, 'Wettest year: ${song.wettestYear}'),
+        _Fact(Icons.notifications_active_rounded, '${song.unusualCount} gong moments'),
+      ]),
+      const SizedBox(height: 20),
+
+      // Now playing: the month and the narrator's speech bubble.
+      Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(colors: [nasaBlue, nasaBlueDeep], begin: Alignment.topLeft, end: Alignment.bottomRight),
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('NOW PLAYING',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.5)),
+          Text(monthTitle(m), style: const TextStyle(color: Colors.white, fontSize: 38, fontWeight: FontWeight.w800, height: 1.2)),
+          Text(seasonNames[m.season] ?? '', style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 15)),
+          const SizedBox(height: 16),
+          fresh
+              ? _Bubble(key: ValueKey(line), text: line.text, story: line.isStory)
+              : _Bubble(
+                  key: ValueKey('wait-${next.index}'),
+                  text: 'Keep listening… the next gong moment is ${monthTitle(song.months[next.index])}.',
+                  story: false,
+                  icon: Icons.headphones_rounded,
+                ),
+        ]),
+      ),
+      const SizedBox(height: 20),
+
+      // The band: one tile per sound.
+      Row(children: [
+        const Text('The band', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        const SizedBox(width: 10),
+        Flexible(child: Text('Tap a tile to turn that sound off or on', style: TextStyle(color: muted.withValues(alpha: 0.9), fontSize: 13))),
+      ]),
+      const SizedBox(height: 10),
+      LayoutBuilder(builder: (context, size) {
+        final perRow = size.maxWidth >= 760 ? 5 : (size.maxWidth >= 460 ? 3 : 2);
+        final width = (size.maxWidth - 10 * (perRow - 1)) / perRow;
+        Widget tile(String layer, IconData icon, String data, String value, String word, String sound) => SizedBox(
+              width: width,
+              child: _BandTile(mixtape: mixtape, layer: layer, icon: icon, data: data, value: value, word: word, sound: sound),
+            );
+        return Wrap(spacing: 10, runSpacing: 10, children: [
+          tile('melody', Icons.thermostat_rounded, 'Temperature', '${m.temp.toStringAsFixed(1)}°C', tempWord(song, m),
+              'Melody: hotter = higher'),
+          tile('drums', Icons.water_drop_rounded, 'Rain', '${m.rain.toStringAsFixed(1)} mm a day', rainWord(song, m),
+              'Drums: rainier = busier'),
+          tile('flute', Icons.blur_on_rounded, 'Haze', m.aod.toStringAsFixed(2), hazeWord(song, m),
+              'Flute: hazy = muffled'),
+          tile('humidity', Icons.cloud_rounded, 'Humidity', '${m.humidity.round()}%', humidityWord(song, m),
+              'Echo: humid = more echo'),
+          tile('gongs', Icons.notifications_active_rounded, 'Unusual?', m.flags.isEmpty ? 'No' : 'Yes!', gongWord(m),
+              'Gong: something unusual'),
+        ]);
+      }),
+      const SizedBox(height: 22),
+
+      _Timeline(mixtape: mixtape, song: song),
+      const SizedBox(height: 14),
+      _Controls(mixtape: mixtape),
+      const SizedBox(height: 12),
+      _Story(mixtape: mixtape, song: song),
+    ]);
+  }
+}
+
+class _Fact extends StatelessWidget {
+  const _Fact(this.icon, this.text);
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(color: softBlue, borderRadius: BorderRadius.circular(30)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 17, color: nasaBlue),
+        const SizedBox(width: 6),
+        Text(text, style: const TextStyle(color: nasaBlue, fontWeight: FontWeight.w600, fontSize: 13)),
+      ]),
+    );
+  }
+}
+
+// What the narrator is saying, as a speech bubble that swaps in each line.
+class _Bubble extends StatelessWidget {
+  const _Bubble({super.key, required this.text, required this.story, this.icon});
+
+  final String text;
+  final bool story; // a gong moment, rather than the intro or a hint
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      liveRegion: true,
+      child: AnimatedSwitcher(
+        duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 350),
+        transitionBuilder: (child, anim) => FadeTransition(
+          opacity: anim,
+          child: SlideTransition(
+            position: Tween(begin: const Offset(0, 0.15), end: Offset.zero).animate(anim),
+            child: child,
+          ),
+        ),
+        child: Container(
+          key: key,
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(4),
+              topRight: Radius.circular(18),
+              bottomLeft: Radius.circular(18),
+              bottomRight: Radius.circular(18),
+            ),
+            border: Border(left: BorderSide(color: story ? nasaRedBright : nasaBlue, width: 5)),
+          ),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Icon(icon ?? (story ? Icons.notifications_active_rounded : Icons.record_voice_over_rounded),
+                color: story ? nasaRed : nasaBlue, size: 22),
+            const SizedBox(width: 10),
+            Expanded(child: Text(text, style: const TextStyle(fontSize: 16, height: 1.45, fontWeight: FontWeight.w500))),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+// One sound in the band. Bounces when it plays; tap to turn it off or on.
+class _BandTile extends StatefulWidget {
+  const _BandTile({
+    required this.mixtape,
+    required this.layer,
+    required this.icon,
+    required this.data,
+    required this.value,
+    required this.word,
+    required this.sound,
+  });
+
+  final Mixtape mixtape;
+  final String layer;
+  final IconData icon;
+  final String data;
+  final String value;
+  final String word;
+  final String sound;
+
+  @override
+  State<_BandTile> createState() => _BandTileState();
+}
+
+class _BandTileState extends State<_BandTile> with SingleTickerProviderStateMixin {
+  late final bounce = AnimationController(vsync: this, duration: const Duration(milliseconds: 260));
+
+  @override
+  void initState() {
+    super.initState();
+    widget.mixtape.hits[widget.layer]!.addListener(_onHit);
+  }
+
+  @override
+  void dispose() {
+    widget.mixtape.hits[widget.layer]!.removeListener(_onHit);
+    bounce.dispose();
+    super.dispose();
+  }
+
+  void _onHit() {
+    if (!mounted || MediaQuery.disableAnimationsOf(context)) return;
+    final big = widget.layer == 'gongs' && widget.mixtape.lastGongBig;
+    bounce.duration = Duration(milliseconds: big ? 900 : 260);
+    bounce.forward(from: 0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final on = widget.mixtape.layerOn[widget.layer]!;
+    final color = tileColors[widget.layer]!;
+
+    return Semantics(
+      toggled: on,
+      label: '${widget.data}: ${widget.value}, ${widget.word}. ${widget.sound}. ${on ? 'Sound on' : 'Sound off'}.',
+      excludeSemantics: true,
+      button: true,
+      child: AnimatedBuilder(
+        animation: bounce,
+        builder: (context, child) {
+          // A quick pop that settles back: 0 → 1 → 0.
+          final t = bounce.isAnimating ? Curves.easeOut.transform(1 - bounce.value) : 0.0;
+          return Transform.scale(scale: 1 + 0.05 * t, child: child);
+        },
+        child: Material(
+          color: on ? color.withValues(alpha: 0.08) : const Color(0xFFF1F1F1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: on ? color.withValues(alpha: 0.35) : const Color(0xFFDDDDDD), width: 2),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => widget.mixtape.toggleLayer(widget.layer),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  AnimatedBuilder(
+                    animation: bounce,
+                    builder: (context, _) => CircleAvatar(
+                      radius: 18,
+                      backgroundColor: on ? Color.lerp(color, nasaRedBright, bounce.isAnimating ? 1 - bounce.value : 0) : Colors.grey,
+                      foregroundColor: Colors.white,
+                      child: Icon(widget.icon, size: 20),
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(on ? Icons.volume_up_rounded : Icons.volume_off_rounded, size: 20, color: on ? color : Colors.grey),
+                ]),
+                const SizedBox(height: 10),
+                Text(widget.data, style: const TextStyle(color: muted, fontSize: 13, fontWeight: FontWeight.w600)),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(widget.value,
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: on ? nasaBlack : muted)),
+                ),
+                Text(widget.word,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: on ? color : muted)),
+                const SizedBox(height: 8),
+                Text(on ? widget.sound : 'Sound off: tap to turn on',
+                    style: const TextStyle(fontSize: 12, color: muted, height: 1.3)),
+              ]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// The whole 20 years as one bar. Red dots mark the stories; tap or drag to
+// jump to a month.
+class _Timeline extends StatelessWidget {
+  const _Timeline({required this.mixtape, required this.song});
+
+  final Mixtape mixtape;
+  final Song song;
+
+  @override
+  Widget build(BuildContext context) {
+    final count = song.months.length;
+    final stories = [for (final l in song.stories) l.index];
+
+    return LayoutBuilder(builder: (context, size) {
+      final width = size.maxWidth;
+      int indexAt(double x) => (x / width * count).floor().clamp(0, count - 1);
+
+      return Semantics(
+        slider: true,
+        label: 'Timeline',
+        value: monthTitle(song.months[mixtape.index]),
+        increasedValue: monthTitle(song.months[(mixtape.index + 12).clamp(0, count - 1)]),
+        decreasedValue: monthTitle(song.months[(mixtape.index - 12).clamp(0, count - 1)]),
+        onIncrease: () => mixtape.seek(mixtape.index + 12),
+        onDecrease: () => mixtape.seek(mixtape.index - 12),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (d) => mixtape.seek(indexAt(d.localPosition.dx)),
+          onHorizontalDragUpdate: (d) => mixtape.seek(indexAt(d.localPosition.dx)),
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: SizedBox(
+              height: 58,
+              child: CustomPaint(painter: _TimelinePainter(song, mixtape.index, stories)),
+            ),
+          ),
+        ),
+      );
+    });
+  }
+}
+
+class _TimelinePainter extends CustomPainter {
+  _TimelinePainter(this.song, this.index, this.stories);
+
+  final Song song;
+  final int index;
+  final List<int> stories;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final count = song.months.length;
+    const barTop = 14.0, barHeight = 14.0;
+    final bar = RRect.fromRectAndRadius(Rect.fromLTWH(0, barTop, size.width, barHeight), const Radius.circular(7));
+    double x(int i) => (i + 0.5) / count * size.width;
+
+    canvas.drawRRect(bar, Paint()..color = softBlue);
+    canvas.save();
+    canvas.clipRRect(bar);
+    canvas.drawRect(Rect.fromLTWH(0, barTop, x(index), barHeight), Paint()..color = nasaBlue);
+    canvas.restore();
+
+    // Story dots above the bar.
+    for (final s in stories) {
+      canvas.drawCircle(Offset(x(s), 6), 4.5, Paint()..color = s <= index ? nasaRed : nasaRedBright.withValues(alpha: 0.55));
+    }
+
+    // Playhead.
+    canvas.drawCircle(Offset(x(index), barTop + barHeight / 2), 11, Paint()..color = Colors.white);
+    canvas.drawCircle(Offset(x(index), barTop + barHeight / 2), 11,
+        Paint()..color = nasaRed..style = PaintingStyle.stroke..strokeWidth = 4);
+
+    // Year labels every 5 years.
+    for (var i = 0; i < count; i++) {
+      final m = song.months[i];
+      if (m.month != 1 || (m.year - song.start) % 5 != 0) continue;
+      final tp = TextPainter(
+        text: TextSpan(text: '${m.year}', style: const TextStyle(fontFamily: 'Poppins', color: muted, fontSize: 12)),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      final left = (i / count * size.width).clamp(0.0, size.width - tp.width);
+      tp.paint(canvas, Offset(left, barTop + barHeight + 8));
+    }
+  }
+
+  @override
+  bool shouldRepaint(_TimelinePainter old) => old.index != index || old.song != song;
+}
+
+class _Controls extends StatelessWidget {
+  const _Controls({required this.mixtape});
+
+  final Mixtape mixtape;
+
+  @override
+  Widget build(BuildContext context) {
+    final playing = mixtape.playing;
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      alignment: WrapAlignment.spaceBetween,
+      spacing: 16,
+      runSpacing: 14,
+      children: [
+        Row(mainAxisSize: MainAxisSize.min, children: [
+          IconButton.filledTonal(
+            onPressed: () => mixtape.jumpStory(-1),
+            tooltip: 'Previous gong moment',
+            icon: const Icon(Icons.skip_previous_rounded),
+          ),
+          const SizedBox(width: 10),
+          Semantics(
+            button: true,
+            label: playing ? 'Pause' : (mixtape.finished ? 'Play again' : 'Play'),
+            excludeSemantics: true,
+            child: SizedBox(
+              width: 76,
+              height: 76,
+              child: FilledButton(
+                onPressed: mixtape.togglePlay,
+                style: FilledButton.styleFrom(
+                  backgroundColor: nasaRed,
+                  shape: const CircleBorder(),
+                  padding: EdgeInsets.zero,
+                  elevation: 3,
+                ),
+                child: Icon(playing ? Icons.pause_rounded : (mixtape.finished ? Icons.replay_rounded : Icons.play_arrow_rounded),
+                    size: 44, color: Colors.white),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          IconButton.filledTonal(
+            onPressed: () => mixtape.jumpStory(1),
+            tooltip: 'Next gong moment',
+            icon: const Icon(Icons.skip_next_rounded),
+          ),
+          const SizedBox(width: 6),
+          IconButton(
+            onPressed: mixtape.restart,
+            tooltip: 'Start again',
+            icon: const Icon(Icons.restart_alt_rounded, color: nasaBlue),
+          ),
+        ]),
+        Row(mainAxisSize: MainAxisSize.min, children: [
+          const Icon(Icons.speed_rounded, color: nasaBlue, size: 20),
+          const SizedBox(width: 6),
+          SegmentedButton<double>(
+            showSelectedIcon: false,
+            style: SegmentedButton.styleFrom(
+              selectedBackgroundColor: nasaBlue,
+              selectedForegroundColor: Colors.white,
+              foregroundColor: nasaBlue,
+              textStyle: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600),
+            ),
+            segments: const [
+              ButtonSegment(value: 0.5, label: Text('Slow')),
+              ButtonSegment(value: 1, label: Text('Normal')),
+              ButtonSegment(value: 1.5, label: Text('Fast')),
+            ],
+            selected: {mixtape.tempo},
+            onSelectionChanged: (s) => mixtape.setTempo(s.first),
+          ),
+        ]),
+        Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(mixtape.volume == 0 ? Icons.volume_off_rounded : Icons.volume_up_rounded, color: nasaBlue, size: 22),
+          SizedBox(
+            width: 150,
+            child: Slider(
+              value: mixtape.volume,
+              max: 100,
+              divisions: 20,
+              label: '${mixtape.volume.round()}%',
+              semanticFormatterCallback: (v) => 'Volume ${v.round()}%',
+              onChanged: mixtape.setVolume,
+            ),
+          ),
+        ]),
+      ],
+    );
+  }
+}
+
+// Every line the narrator says, so you can read ahead or jump to one.
+class _Story extends StatelessWidget {
+  const _Story({required this.mixtape, required this.song});
+
+  final Mixtape mixtape;
+  final Song song;
+
+  @override
+  Widget build(BuildContext context) {
+    final current = song.lineAt(mixtape.index);
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: Container(
+        decoration: BoxDecoration(color: paper, borderRadius: BorderRadius.circular(18)),
+        child: ExpansionTile(
+          shape: const RoundedRectangleBorder(),
+          leading: const Icon(Icons.menu_book_rounded, color: nasaBlue),
+          title: const Text('Read the whole story', style: TextStyle(fontWeight: FontWeight.w700)),
+          subtitle: Text('${song.stories.length} moments. Tap one to jump there.', style: const TextStyle(color: muted, fontSize: 13)),
+          childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
+          children: [
+            for (final l in song.lines)
+              ListTile(
+                dense: true,
+                selected: l == current,
+                selectedTileColor: softBlue,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                leading: Icon(l.isStory ? Icons.notifications_active_rounded : Icons.record_voice_over_rounded,
+                    color: l.isStory ? nasaRed : nasaBlue, size: 20),
+                title: Text(l.text, style: const TextStyle(fontSize: 14, height: 1.4, color: nasaBlack)),
+                subtitle: l.isStory ? Text(monthTitle(song.months[l.index]), style: const TextStyle(color: muted)) : null,
+                onTap: () => mixtape.seek(l.index),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}

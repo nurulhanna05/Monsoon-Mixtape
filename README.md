@@ -45,6 +45,38 @@ Both are already done and committed, so you don't need them for a demo.
 
 ---
 
+## Casual version (Flutter), `alternative` branch
+
+On this branch the front page (**http://127.0.0.1:8000**) opens a simpler,
+friendlier version built with Flutter in NASA colours. The classic page is
+still at **/index.html** (linked at the bottom of the app).
+
+- **Pick a place**: search box, six favourite cities, "Surprise me", or tap
+  the map.
+- **Listen**: a big red Play button, the month in large type, and a speech
+  bubble with the narration. Quick facts at the top (how much warmer it got,
+  hottest and wettest year).
+- **The band**: one tile per sound showing the data in everyday words
+  ("Hot", "Very rainy", "Hazy!"). Tiles bounce when they play; tap one to
+  turn that sound off or on.
+- **Timeline**: red dots are the gong moments; tap or drag to jump. The
+  arrow buttons skip to the previous or next gong moment.
+
+The music comes from the same Tone.js code as the classic page
+(`app/web/audio_bridge.js` connects the two). The built app is committed in
+`public/app/`, so running the server is enough; you only need Flutter to
+change it:
+
+```bash
+cd app
+flutter build web --release --base-href /app/ --no-web-resources-cdn -o C:/path/to/repo/public/app
+```
+
+(Use the full path for `-o`, and run it from PowerShell or cmd: Git Bash
+mangles `/app/`.)
+
+---
+
 ## What's on the page
 
 - **Map and city list.** Tap anywhere in Malaysia or pick one of 37 cities.
