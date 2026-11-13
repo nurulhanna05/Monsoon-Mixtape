@@ -690,8 +690,8 @@ class _Controls extends StatelessWidget {
             ),
             segments: const [
               ButtonSegment(value: 0.5, label: Text('Slow')),
-              ButtonSegment(value: 1, label: Text('Normal')),
-              ButtonSegment(value: 1.5, label: Text('Fast')),
+              ButtonSegment(value: 0.75, label: Text('Normal')),
+              ButtonSegment(value: 1, label: Text('Fast')),
             ],
             selected: {mixtape.tempo},
             onSelectionChanged: (s) => mixtape.setTempo(s.first),

@@ -166,7 +166,7 @@ class _Header extends StatelessWidget {
                       color: Colors.white, fontSize: compact ? 22 : 28, fontWeight: FontWeight.w800, height: 1.1)),
             ),
             const SizedBox(height: 2),
-            Text("Hear 20 years of Malaysia's weather as a one-minute song",
+            Text("Hear 20 years of Malaysia's weather as a short song",
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: compact ? 13 : 15)),
           ]),
         ),

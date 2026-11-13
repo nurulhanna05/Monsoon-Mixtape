@@ -103,7 +103,9 @@ export async function createInstruments() {
   await reverb.generate();
 
   const channels = {};
-  for (const name of LAYERS) channels[name] = new Tone.Channel().connect(reverb);
+  // Drums and flute a bit quieter (in dB) so the melody leads.
+  const levels = { melody: 0, drums: -6, flute: -6, gongs: 0 };
+  for (const name of LAYERS) channels[name] = new Tone.Channel({ volume: levels[name] }).connect(reverb);
 
   // The seruling goes through a vibrato and a low-pass filter that closes
   // when the air is hazy (applies to recordings and synth alike).

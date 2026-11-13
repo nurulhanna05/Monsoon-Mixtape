@@ -17,6 +17,7 @@ class Mixtape extends ChangeNotifier {
   Mixtape() {
     audio = Audio(onBeat: _onBeat, onHit: _onHit, onEnd: _onEnd);
     audio.setVolume(volume);
+    audio.setTempo(tempo);
   }
 
   late final Audio audio;
@@ -38,7 +39,9 @@ class Mixtape extends ChangeNotifier {
   bool finished = false;
   String? error;
 
-  double tempo = 1;
+  // People found the full speed too fast, so "Normal" is 0.75 of it (about
+  // 80 seconds a song); "Fast" is the full speed.
+  double tempo = 0.75;
   double volume = 80;
   final layerOn = {for (final t in tiles) t: true};
   // Bumped on every stroke, so tiles can bounce in time with the music.
