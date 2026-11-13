@@ -4,8 +4,10 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:web/web.dart' as web;
 
 import 'mixtape.dart';
+import 'photos.dart';
 import 'place_picker.dart';
 import 'player.dart';
+import 'share.dart';
 import 'theme.dart';
 
 void main() {
@@ -90,10 +92,17 @@ class HomePage extends StatelessWidget {
         final wide = size.maxWidth >= 1000;
         final picker = PlacePicker(mixtape: mixtape, onPicked: wide ? null : _showPlayer, mapHeight: wide ? null : 300);
         final player = Player(key: _playerKey, mixtape: mixtape);
+        final photos = PhotoShow(mixtape: mixtape);
         final gutter = wide ? 24.0 : 16.0;
 
         return CustomScrollView(slivers: [
-          SliverToBoxAdapter(child: _Header(compact: !wide, onSetNight: onSetNight)),
+          SliverToBoxAdapter(
+            child: ListenableBuilder(
+              listenable: mixtape,
+              builder: (context, _) =>
+                  _Header(compact: !wide, onSetNight: onSetNight, shareUrl: mixtape.shareUrl),
+            ),
+          ),
           SliverPadding(
             padding: EdgeInsets.all(gutter),
             sliver: SliverToBoxAdapter(
@@ -102,11 +111,20 @@ class HomePage extends StatelessWidget {
                   constraints: const BoxConstraints(maxWidth: 1360),
                   child: wide
                       ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          SizedBox(width: 440, height: 760, child: picker),
+                          SizedBox(
+                            width: 440,
+                            child: Column(children: [
+                              SizedBox(height: 680, child: picker),
+                              SizedBox(height: gutter),
+                              photos,
+                            ]),
+                          ),
                           SizedBox(width: gutter),
                           Expanded(child: player),
                         ])
-                      : Column(children: [picker, SizedBox(height: gutter), player]),
+                      // Phones: picking a place scrolls to the player, so
+                      // the photos sit just below it.
+                      : Column(children: [picker, SizedBox(height: gutter), player, SizedBox(height: gutter), photos]),
                 ),
               ),
             ),
@@ -119,10 +137,11 @@ class HomePage extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.compact, required this.onSetNight});
+  const _Header({required this.compact, required this.onSetNight, required this.shareUrl});
 
   final bool compact;
   final void Function(bool night) onSetNight;
+  final String shareUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -174,6 +193,32 @@ class _Header extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.help_outline_rounded),
                 label: const Text('How it works', style: TextStyle(fontWeight: FontWeight.w600)),
+              ),
+        // Scan to open the demo on a phone; tap for a bigger code.
+        SizedBox(width: compact ? 0 : 16),
+        compact
+            ? IconButton(
+                onPressed: () => showShare(context, shareUrl),
+                tooltip: 'Open on your phone',
+                icon: const Icon(Icons.qr_code_2_rounded, color: Colors.white),
+              )
+            : Tooltip(
+                message: 'Scan to open on your phone (tap to enlarge)',
+                child: Semantics(
+                  button: true,
+                  label: 'QR code to open this demo on your phone',
+                  child: InkWell(
+                    onTap: () => showShare(context, shareUrl),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Text('Scan to\ntry it',
+                          textAlign: TextAlign.right,
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 12, height: 1.2)),
+                      const SizedBox(width: 8),
+                      ExcludeSemantics(child: QrBox(data: shareUrl, size: 64)),
+                    ]),
+                  ),
+                ),
               ),
       ]),
     );

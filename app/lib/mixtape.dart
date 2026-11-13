@@ -22,6 +22,9 @@ class Mixtape extends ChangeNotifier {
   late final Audio audio;
   List<Town> towns = [];
   List<List<LatLng>> stateOutlines = [];
+  Map<String, List<Photo>> photos = {}; // slideshow photos by town name
+  // Where the header's QR code points: the published address, or this page's.
+  String shareUrl = Uri.base.resolve('/').toString();
 
   LatLng? picked;
   String? pickedName; // city name while loading, before the server answers
@@ -46,6 +49,7 @@ class Mixtape extends ChangeNotifier {
       Uri.base.resolve(path).replace(queryParameters: query);
 
   Future<void> loadStatic() async {
+    _loadShareUrl();
     final townJson = jsonDecode((await http.get(_url('/data/towns.json'))).body) as List;
     towns = [for (final t in townJson) Town.fromJson(t)];
     notifyListeners();
@@ -62,6 +66,37 @@ class Mixtape extends ChangeNotifier {
     }
     stateOutlines = outlines;
     notifyListeners();
+
+    // Slideshow photos are optional: the app works without them.
+    try {
+      final photoJson = jsonDecode(utf8.decode((await http.get(_url('/photos/photos.json'))).bodyBytes)) as Map;
+      photos = {
+        for (final MapEntry(:key, :value) in photoJson.entries)
+          key as String: [for (final p in value as List) Photo.fromJson(p)],
+      };
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  Future<void> _loadShareUrl() async {
+    try {
+      final url = jsonDecode((await http.get(_url('/share-url'))).body)['url'] as String?;
+      if (url != null && url.isNotEmpty) {
+        shareUrl = url;
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
+  static Uri photoUrl(Photo p) => _url('/photos/${p.file}');
+
+  // The town whose photos to show: the one picked, or the closest one to a
+  // spot tapped on the map.
+  Town? get photoTown {
+    final at = picked;
+    if (at == null || towns.isEmpty) return null;
+    double away(Town t) => (t.lat - at.latitude) * (t.lat - at.latitude) + (t.lon - at.longitude) * (t.lon - at.longitude);
+    return towns.reduce((a, b) => away(a) <= away(b) ? a : b);
   }
 
   Town? get pickedTown =>

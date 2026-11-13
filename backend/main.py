@@ -2,6 +2,7 @@
 
     uvicorn backend.main:app --reload
 """
+import os
 from pathlib import Path
 from urllib.error import URLError
 
@@ -59,6 +60,13 @@ def song(
         "trend": trend,
         "narration": narration.build(region, data["months"], anomalies, trend),
     }
+
+
+# The address the app's QR code points at. Set PUBLIC_URL when the app is
+# online (see deploy/README.md); empty means "use the page's own address".
+@app.get("/share-url", include_in_schema=False)
+def share_url():
+    return {"url": os.environ.get("PUBLIC_URL", "")}
 
 
 # The Flutter app (built into public/app/) is the front page on this

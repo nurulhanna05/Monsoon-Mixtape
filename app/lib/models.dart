@@ -12,6 +12,21 @@ class Town {
   final double lon;
 }
 
+// A slideshow photo (from public/photos/photos.json, made by
+// scripts/fetch_photos.py). The credit must be shown with it.
+class Photo {
+  Photo.fromJson(Map<String, dynamic> j)
+      : file = j['file'],
+        title = j['title'],
+        credit = j['credit'],
+        source = j['source'];
+
+  final String file; // relative to /photos/
+  final String title;
+  final String credit; // photographer and licence
+  final String source; // the photo's Wikimedia Commons page
+}
+
 class Month {
   Month.fromJson(Map<String, dynamic> j)
       : year = j['year'],

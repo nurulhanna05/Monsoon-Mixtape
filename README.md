@@ -62,6 +62,14 @@ still at **/index.html** (linked at the bottom of the app).
   (cooler) to NASA red (hotter), drum taps and hits, flute hold notes (grey
   when hazy) and gold gongs that glow in unusual months. Nothing to press;
   it shows each month of data land.
+- **Photos**: under the map, a slideshow of the picked place (landmarks,
+  plus rain, sunsets or mist where available). It moves on every few
+  seconds while the song plays and loops; arrows and dots work any time.
+  Photos are free-licensed from Wikimedia Commons, credited on each slide,
+  saved in `public/photos/` by `scripts/fetch_photos.py`.
+- **QR code** (top right): scan to open the demo on a phone. It points at
+  the published address once the app is online; see
+  [deploy/README.md](deploy/README.md) to put it on an Ubuntu server.
 - **The band**: one tile per sound showing the data in everyday words
   ("Hot", "Very rainy", "Hazy!"). Tiles bounce when they play; tap one to
   turn that sound off or on.

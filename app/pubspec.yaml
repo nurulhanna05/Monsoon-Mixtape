@@ -13,6 +13,7 @@ dependencies:
   http: ^1.6.0
   latlong2: ^0.10.1
   material_ui: ^1.11.0
+  qr: ^4.0.1
   url_launcher: ^6.3.3
   web: ^1.1.2
 
