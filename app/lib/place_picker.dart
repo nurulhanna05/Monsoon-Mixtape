@@ -25,6 +25,7 @@ class PlacePicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = Palette.of(context);
     final map = ClipRRect(borderRadius: BorderRadius.circular(18), child: _Map(mixtape: mixtape, onPicked: onPicked));
 
     return Card(
@@ -49,13 +50,13 @@ class PlacePicker extends StatelessWidget {
                       selectedColor: nasaBlue,
                       labelStyle: TextStyle(
                         fontWeight: FontWeight.w600,
-                        color: mixtape.pickedTown == town ? Colors.white : nasaBlue,
+                        color: mixtape.pickedTown == town ? Colors.white : c.blue,
                       ),
                       onSelected: (_) => _pick(town),
                     ),
                 ActionChip(
-                  avatar: const Icon(Icons.casino_rounded, color: nasaRed, size: 18),
-                  label: const Text('Surprise me', style: TextStyle(color: nasaRed, fontWeight: FontWeight.w600)),
+                  avatar: Icon(Icons.casino_rounded, color: c.red, size: 18),
+                  label: Text('Surprise me', style: TextStyle(color: c.red, fontWeight: FontWeight.w600)),
                   onPressed: mixtape.towns.isEmpty
                       ? null
                       : () {
@@ -65,11 +66,11 @@ class PlacePicker extends StatelessWidget {
                 ),
               ]),
               const SizedBox(height: 16),
-              const Row(children: [
-                Icon(Icons.touch_app_rounded, size: 18, color: muted),
+              Row(children: [
+                Icon(Icons.touch_app_rounded, size: 18, color: c.muted),
                 SizedBox(width: 6),
                 Expanded(
-                  child: Text('Or tap anywhere on the map', style: TextStyle(color: muted, fontSize: 14)),
+                  child: Text('Or tap anywhere on the map', style: TextStyle(color: c.muted, fontSize: 14)),
                 ),
               ]),
               const SizedBox(height: 8),
@@ -113,6 +114,7 @@ class _Search extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = Palette.of(context);
     return Autocomplete<Town>(
       displayStringForOption: (t) => t.name,
       optionsBuilder: (value) {
@@ -130,13 +132,13 @@ class _Search extends StatelessWidget {
         onSubmitted: (_) => onSubmit(),
         decoration: InputDecoration(
           hintText: 'Search 37 cities, e.g. Ipoh',
-          prefixIcon: const Icon(Icons.search_rounded, color: nasaBlue),
+          prefixIcon: Icon(Icons.search_rounded, color: c.blue),
           filled: true,
-          fillColor: paper,
+          fillColor: c.panel,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(30),
-            borderSide: const BorderSide(color: nasaBlue, width: 2),
+            borderSide: BorderSide(color: c.blue, width: 2),
           ),
         ),
       ),
@@ -151,7 +153,7 @@ class _Search extends StatelessWidget {
             child: ListView(shrinkWrap: true, padding: EdgeInsets.zero, children: [
               for (final t in options)
                 ListTile(
-                  leading: const Icon(Icons.place_rounded, color: nasaRed),
+                  leading: Icon(Icons.place_rounded, color: c.red),
                   title: Text(t.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                   subtitle: Text(t.state),
                   onTap: () => onSelected(t),
@@ -186,6 +188,8 @@ class _MapState extends State<_Map> {
   Widget _build(BuildContext context, Widget? _) {
     final m = widget.mixtape;
     final picked = m.picked;
+    final c = Palette.of(context);
+    final night = Theme.of(context).brightness == Brightness.dark;
     // Glide to cities picked from the chips or the search box.
     if (picked != null && picked != _shown) {
       _shown = picked;
@@ -206,7 +210,7 @@ class _MapState extends State<_Map> {
           ),
           minZoom: 4.5,
           maxZoom: 12,
-          backgroundColor: softBlue,
+          backgroundColor: c.tint,
           interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
           onTap: (_, point) {
             m.pick(point.latitude, point.longitude);
@@ -217,13 +221,14 @@ class _MapState extends State<_Map> {
           TileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             userAgentPackageName: 'org.spaceapps.monsoon_mixtape',
+            tileBuilder: night ? darkModeTileBuilder : null,
           ),
           PolygonLayer(polygons: [
             for (final ring in m.stateOutlines)
               Polygon(
                 points: ring,
-                color: nasaBlue.withValues(alpha: 0.08),
-                borderColor: nasaBlue.withValues(alpha: 0.6),
+                color: c.blue.withValues(alpha: 0.08),
+                borderColor: c.blue.withValues(alpha: 0.6),
                 borderStrokeWidth: 1,
               ),
           ]),
@@ -268,7 +273,10 @@ class _MapState extends State<_Map> {
                     shadows: [Shadow(color: Colors.black38, blurRadius: 6)]),
               ),
           ]),
-          const SimpleAttributionWidget(source: Text('OpenStreetMap contributors')),
+          SimpleAttributionWidget(
+            source: Text('OpenStreetMap contributors', style: TextStyle(color: c.text)),
+            backgroundColor: c.card.withValues(alpha: 0.85),
+          ),
         ],
       ),
     );

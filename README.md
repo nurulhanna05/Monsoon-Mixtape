@@ -61,6 +61,8 @@ still at **/index.html** (linked at the bottom of the app).
   turn that sound off or on.
 - **Timeline**: red dots are the gong moments; tap or drag to jump. The
   arrow buttons skip to the previous or next gong moment.
+- **Day and night mode**: the sun/moon button in the header switches. It
+  starts out following the device's setting and remembers your choice.
 
 The music comes from the same Tone.js code as the classic page
 (`app/web/audio_bridge.js` connects the two). The built app is committed in

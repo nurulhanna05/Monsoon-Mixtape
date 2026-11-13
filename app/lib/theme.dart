@@ -8,44 +8,119 @@ const nasaBlueDeep = Color(0xFF0032A0);
 const nasaRed = Color(0xFFE4002B);
 const nasaRedBright = Color(0xFFFC3D21);
 const nasaBlack = Color(0xFF212121);
-const paper = Color(0xFFF3F5FA); // page background, a whisper of blue
-const softBlue = Color(0xFFE3E9F5); // tinted panels
-const muted = Color(0xFF555B66); // secondary text, 7:1 on white
+// Colours that change between day and night. Get them with Palette.of(context).
+class Palette extends ThemeExtension<Palette> {
+  const Palette({
+    required this.page,
+    required this.card,
+    required this.panel,
+    required this.tint,
+    required this.text,
+    required this.muted,
+    required this.blue,
+    required this.red,
+    required this.bubble,
+    required this.off,
+    required this.offBorder,
+    required this.tiles,
+  });
 
-// One colour per instrument tile.
-const tileColors = {
-  'melody': nasaRed,
-  'drums': nasaBlue,
-  'flute': Color(0xFF5B6B85),
-  'gongs': Color(0xFF8A5A00),
-  'humidity': Color(0xFF00708A),
-};
+  final Color page; // behind the cards
+  final Color card;
+  final Color panel; // boxes inside cards (search, messages, story list)
+  final Color tint; // chips, timeline track
+  final Color text;
+  final Color muted; // secondary text
+  final Color blue; // blue text and icons
+  final Color red; // red text and icons
+  final Color bubble; // the narration bubble
+  final Color off; // a tile that's turned off
+  final Color offBorder;
+  final Map<String, Color> tiles; // one colour per instrument tile
 
-ThemeData buildTheme() {
+  static Palette of(BuildContext context) => Theme.of(context).extension<Palette>()!;
+
+  @override
+  Palette copyWith() => this;
+
+  @override
+  Palette lerp(Palette? other, double t) => t < 0.5 || other == null ? this : other;
+}
+
+// Day: white cards, NASA Blue and NASA Red. Muted text is 7:1 on white.
+const day = Palette(
+  page: Color(0xFFF3F5FA),
+  card: Colors.white,
+  panel: Color(0xFFF3F5FA),
+  tint: Color(0xFFE3E9F5),
+  text: nasaBlack,
+  muted: Color(0xFF555B66),
+  blue: nasaBlue,
+  red: nasaRed,
+  bubble: Colors.white,
+  off: Color(0xFFF1F1F1),
+  offBorder: Color(0xFFDDDDDD),
+  tiles: {
+    'melody': nasaRed,
+    'drums': nasaBlue,
+    'flute': Color(0xFF5B6B85),
+    'gongs': Color(0xFF8A5A00),
+    'humidity': Color(0xFF00708A),
+  },
+);
+
+// Night: deep space navy, with lighter blue and red so text stays readable
+// (all above 4.5:1 on the cards).
+const night = Palette(
+  page: Color(0xFF070E22),
+  card: Color(0xFF111B3A),
+  panel: Color(0xFF0B1430),
+  tint: Color(0xFF1C2B55),
+  text: Color(0xFFF1F3F8),
+  muted: Color(0xFFB3BCCE),
+  blue: Color(0xFF9DBBFF),
+  red: Color(0xFFFF7A66),
+  bubble: Color(0xFF0B1430),
+  off: Color(0xFF161F3A),
+  offBorder: Color(0xFF27324F),
+  tiles: {
+    'melody': Color(0xFFFF7A66),
+    'drums': Color(0xFF9DBBFF),
+    'flute': Color(0xFFB5C0D4),
+    'gongs': Color(0xFFF0B44C),
+    'humidity': Color(0xFF5CCDE3),
+  },
+);
+
+ThemeData buildTheme(Brightness brightness) {
+  final c = brightness == Brightness.dark ? night : day;
   final scheme = ColorScheme.fromSeed(
     seedColor: nasaBlue,
-    primary: nasaBlue,
-    onPrimary: Colors.white,
+    brightness: brightness,
+    primary: c.blue,
+    onPrimary: brightness == Brightness.dark ? nasaBlack : Colors.white,
     secondary: nasaRed,
     onSecondary: Colors.white,
-    surface: Colors.white,
-    onSurface: nasaBlack,
+    surface: c.card,
+    onSurface: c.text,
   );
   final base = ThemeData(colorScheme: scheme, useMaterial3: true, fontFamily: 'Poppins');
   return base.copyWith(
-    scaffoldBackgroundColor: paper,
-    textTheme: base.textTheme.apply(bodyColor: nasaBlack, displayColor: nasaBlack),
+    extensions: [c],
+    scaffoldBackgroundColor: c.page,
+    textTheme: base.textTheme.apply(bodyColor: c.text, displayColor: c.text),
     cardTheme: CardThemeData(
-      color: Colors.white,
+      color: c.card,
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
     ),
+    dialogTheme: DialogThemeData(backgroundColor: c.card),
     chipTheme: base.chipTheme.copyWith(
-      backgroundColor: Colors.white,
-      side: const BorderSide(color: softBlue, width: 2),
+      backgroundColor: c.card,
+      side: BorderSide(color: c.tint, width: 2),
       shape: const StadiumBorder(),
-      labelStyle: const TextStyle(fontWeight: FontWeight.w600, color: nasaBlue),
+      labelStyle: TextStyle(fontWeight: FontWeight.w600, color: c.blue),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
@@ -54,10 +129,10 @@ ThemeData buildTheme() {
         textStyle: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600, fontSize: 15),
       ),
     ),
-    sliderTheme: const SliderThemeData(
-      activeTrackColor: nasaBlue,
-      thumbColor: nasaBlue,
-      inactiveTrackColor: softBlue,
+    sliderTheme: SliderThemeData(
+      activeTrackColor: c.blue,
+      thumbColor: c.blue,
+      inactiveTrackColor: c.tint,
     ),
   );
 }

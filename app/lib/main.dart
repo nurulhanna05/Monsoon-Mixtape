@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/semantics.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:web/web.dart' as web;
 
 import 'mixtape.dart';
 import 'place_picker.dart';
@@ -22,13 +23,36 @@ class MixtapeApp extends StatefulWidget {
   State<MixtapeApp> createState() => _MixtapeAppState();
 }
 
+// Day or night is remembered per browser; until someone picks one, the app
+// follows the device setting.
+const _themeKey = 'monsoon-mixtape-theme';
+
 class _MixtapeAppState extends State<MixtapeApp> {
   final mixtape = Mixtape();
+  ThemeMode themeMode = ThemeMode.system;
 
   @override
   void initState() {
     super.initState();
     mixtape.loadStatic();
+    try {
+      themeMode = switch (web.window.localStorage.getItem(_themeKey)) {
+        'light' => ThemeMode.light,
+        'dark' => ThemeMode.dark,
+        _ => ThemeMode.system,
+      };
+    } catch (_) {
+      // Storage blocked (e.g. private window): follow the device.
+    }
+  }
+
+  void _setNight(bool night) {
+    setState(() => themeMode = night ? ThemeMode.dark : ThemeMode.light);
+    try {
+      web.window.localStorage.setItem(_themeKey, night ? 'dark' : 'light');
+    } catch (_) {
+      // Not remembered, but still switched for this visit.
+    }
   }
 
   @override
@@ -36,16 +60,19 @@ class _MixtapeAppState extends State<MixtapeApp> {
     return MaterialApp(
       title: 'Monsoon Mixtape',
       debugShowCheckedModeBanner: false,
-      theme: buildTheme(),
-      home: HomePage(mixtape: mixtape),
+      theme: buildTheme(Brightness.light),
+      darkTheme: buildTheme(Brightness.dark),
+      themeMode: themeMode,
+      home: HomePage(mixtape: mixtape, onSetNight: _setNight),
     );
   }
 }
 
 class HomePage extends StatelessWidget {
-  HomePage({super.key, required this.mixtape});
+  HomePage({super.key, required this.mixtape, required this.onSetNight});
 
   final Mixtape mixtape;
+  final void Function(bool night) onSetNight;
   final _playerKey = GlobalKey();
 
   // On phones the player sits below the map, so scroll to it after a pick.
@@ -66,7 +93,7 @@ class HomePage extends StatelessWidget {
         final gutter = wide ? 24.0 : 16.0;
 
         return CustomScrollView(slivers: [
-          SliverToBoxAdapter(child: _Header(compact: !wide)),
+          SliverToBoxAdapter(child: _Header(compact: !wide, onSetNight: onSetNight)),
           SliverPadding(
             padding: EdgeInsets.all(gutter),
             sliver: SliverToBoxAdapter(
@@ -92,12 +119,14 @@ class HomePage extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.compact});
+  const _Header({required this.compact, required this.onSetNight});
 
   final bool compact;
+  final void Function(bool night) onSetNight;
 
   @override
   Widget build(BuildContext context) {
+    final night = Theme.of(context).brightness == Brightness.dark;
     return Container(
       color: nasaBlue,
       padding: EdgeInsets.symmetric(horizontal: compact ? 16 : 32, vertical: compact ? 16 : 22),
@@ -123,6 +152,12 @@ class _Header extends StatelessWidget {
           ]),
         ),
         const SizedBox(width: 8),
+        IconButton(
+          onPressed: () => onSetNight(!night),
+          tooltip: night ? 'Switch to day mode' : 'Switch to night mode',
+          icon: Icon(night ? Icons.light_mode_rounded : Icons.dark_mode_rounded, color: Colors.white),
+        ),
+        SizedBox(width: compact ? 0 : 8),
         compact
             ? IconButton(
                 onPressed: () => _showHelp(context),
@@ -146,6 +181,7 @@ class _Header extends StatelessWidget {
 }
 
 void _showHelp(BuildContext context) {
+  final c = Palette.of(context);
   Widget step(IconData icon, Color color, String title, String text) => Padding(
         padding: const EdgeInsets.only(bottom: 18),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -154,7 +190,7 @@ void _showHelp(BuildContext context) {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-              Text(text, style: const TextStyle(color: muted, height: 1.4)),
+              Text(text, style: TextStyle(color: c.muted, height: 1.4)),
             ]),
           ),
         ]),
@@ -173,15 +209,15 @@ void _showHelp(BuildContext context) {
                 'Tap a city, search for one, or tap anywhere on the map of Malaysia.'),
             step(Icons.volume_up_rounded, nasaRed, 'Turn your sound on',
                 'Every month from 2006 to 2025 becomes one beat, so 20 years plays in about a minute.'),
-            step(Icons.music_note_rounded, tileColors['melody']!, 'Listen to the weather',
+            step(Icons.music_note_rounded, day.tiles['melody']!, 'Listen to the weather',
                 'Hotter months play higher notes. Rainy months bring more drums. Haze muffles the flute. '
                     'Sticky, humid months echo.'),
-            step(Icons.notifications_active_rounded, tileColors['gongs']!, 'Wait for the gong',
+            step(Icons.notifications_active_rounded, day.tiles['gongs']!, 'Wait for the gong',
                 'A big gong means something unusual happened, like a heatwave or a haze season. '
                     'The speech bubble tells you what.'),
-            const Text(
+            Text(
               'The weather data comes from NASA POWER, which measures the whole planet from satellites.',
-              style: TextStyle(color: muted, fontSize: 13),
+              style: TextStyle(color: c.muted, fontSize: 13),
             ),
           ]),
         ),
@@ -196,12 +232,13 @@ class _Footer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = Palette.of(context);
     Widget link(String text, String url) => InkWell(
           onTap: () => launchUrl(Uri.parse(url)),
           child: Text(text,
-              style: const TextStyle(color: nasaBlue, decoration: TextDecoration.underline, fontSize: 13)),
+              style: TextStyle(color: c.blue, decoration: TextDecoration.underline, fontSize: 13)),
         );
-    const small = TextStyle(color: muted, fontSize: 13);
+    final small = TextStyle(color: c.muted, fontSize: 13);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -211,13 +248,13 @@ class _Footer extends StatelessWidget {
         spacing: 6,
         runSpacing: 4,
         children: [
-          const Text('Climate data:', style: small),
+          Text('Climate data:', style: small),
           link('NASA POWER', 'https://power.larc.nasa.gov/'),
-          const Text('· Map: ©', style: small),
+          Text('· Map: ©', style: small),
           link('OpenStreetMap', 'https://www.openstreetmap.org/copyright'),
-          const Text('contributors · State outlines:', style: small),
+          Text('contributors · State outlines:', style: small),
           link('geoBoundaries', 'https://www.geoboundaries.org/'),
-          const Text('·', style: small),
+          Text('·', style: small),
           link('Classic version (more detail)', Uri.base.resolve('/index.html').toString()),
         ],
       ),

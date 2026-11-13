@@ -68,11 +68,12 @@ class _Message extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = Palette.of(context);
     return Semantics(
       liveRegion: true,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 56, horizontal: 24),
-        decoration: BoxDecoration(color: paper, borderRadius: BorderRadius.circular(20)),
+        decoration: BoxDecoration(color: c.panel, borderRadius: BorderRadius.circular(20)),
         child: Column(children: [
           SizedBox(
             width: 96,
@@ -90,7 +91,7 @@ class _Message extends StatelessWidget {
           const SizedBox(height: 18),
           Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
-          Text(text, textAlign: TextAlign.center, style: const TextStyle(color: muted, fontSize: 15, height: 1.5)),
+          Text(text, textAlign: TextAlign.center, style: TextStyle(color: c.muted, fontSize: 15, height: 1.5)),
         ]),
       ),
     );
@@ -105,6 +106,7 @@ class _Playing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = Palette.of(context);
     final m = song.months[mixtape.index];
     // A story stays up for about 4 seconds (16 months); after that the
     // bubble points ahead to the next one instead.
@@ -119,7 +121,7 @@ class _Playing extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(bottom: 3),
           child: Text('${song.start}–${song.end} · played on the ${leadNames[song.lead]}',
-              style: const TextStyle(color: muted, fontSize: 15)),
+              style: TextStyle(color: c.muted, fontSize: 15)),
         ),
       ]),
       const SizedBox(height: 12),
@@ -162,7 +164,7 @@ class _Playing extends StatelessWidget {
       Row(children: [
         const Text('The band', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
         const SizedBox(width: 10),
-        Flexible(child: Text('Tap a tile to turn that sound off or on', style: TextStyle(color: muted.withValues(alpha: 0.9), fontSize: 13))),
+        Flexible(child: Text('Tap a tile to turn that sound off or on', style: TextStyle(color: c.muted, fontSize: 13))),
       ]),
       const SizedBox(height: 10),
       LayoutBuilder(builder: (context, size) {
@@ -204,13 +206,14 @@ class _Fact extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = Palette.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-      decoration: BoxDecoration(color: softBlue, borderRadius: BorderRadius.circular(30)),
+      decoration: BoxDecoration(color: c.tint, borderRadius: BorderRadius.circular(30)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 17, color: nasaBlue),
+        Icon(icon, size: 17, color: c.blue),
         const SizedBox(width: 6),
-        Text(text, style: const TextStyle(color: nasaBlue, fontWeight: FontWeight.w600, fontSize: 13)),
+        Text(text, style: TextStyle(color: c.blue, fontWeight: FontWeight.w600, fontSize: 13)),
       ]),
     );
   }
@@ -226,6 +229,7 @@ class _Bubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = Palette.of(context);
     return Semantics(
       liveRegion: true,
       child: AnimatedSwitcher(
@@ -242,18 +246,18 @@ class _Bubble extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: c.bubble,
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(4),
               topRight: Radius.circular(18),
               bottomLeft: Radius.circular(18),
               bottomRight: Radius.circular(18),
             ),
-            border: Border(left: BorderSide(color: story ? nasaRedBright : nasaBlue, width: 5)),
+            border: Border(left: BorderSide(color: story ? nasaRedBright : c.blue, width: 5)),
           ),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Icon(icon ?? (story ? Icons.notifications_active_rounded : Icons.record_voice_over_rounded),
-                color: story ? nasaRed : nasaBlue, size: 22),
+                color: story ? c.red : c.blue, size: 22),
             const SizedBox(width: 10),
             Expanded(child: Text(text, style: const TextStyle(fontSize: 16, height: 1.45, fontWeight: FontWeight.w500))),
           ]),
@@ -313,7 +317,8 @@ class _BandTileState extends State<_BandTile> with SingleTickerProviderStateMixi
   @override
   Widget build(BuildContext context) {
     final on = widget.mixtape.layerOn[widget.layer]!;
-    final color = tileColors[widget.layer]!;
+    final c = Palette.of(context);
+    final color = c.tiles[widget.layer]!;
 
     return Semantics(
       toggled: on,
@@ -328,10 +333,10 @@ class _BandTileState extends State<_BandTile> with SingleTickerProviderStateMixi
           return Transform.scale(scale: 1 + 0.05 * t, child: child);
         },
         child: Material(
-          color: on ? color.withValues(alpha: 0.08) : const Color(0xFFF1F1F1),
+          color: on ? color.withValues(alpha: 0.08) : c.off,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: BorderSide(color: on ? color.withValues(alpha: 0.35) : const Color(0xFFDDDDDD), width: 2),
+            side: BorderSide(color: on ? color.withValues(alpha: 0.35) : c.offBorder, width: 2),
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
@@ -344,29 +349,29 @@ class _BandTileState extends State<_BandTile> with SingleTickerProviderStateMixi
                     animation: bounce,
                     builder: (context, _) => CircleAvatar(
                       radius: 18,
-                      backgroundColor: on ? Color.lerp(color, nasaRedBright, bounce.isAnimating ? 1 - bounce.value : 0) : Colors.grey,
+                      backgroundColor: on ? Color.lerp(day.tiles[widget.layer], nasaRedBright, bounce.isAnimating ? 1 - bounce.value : 0) : Colors.grey,
                       foregroundColor: Colors.white,
                       child: Icon(widget.icon, size: 20),
                     ),
                   ),
                   const Spacer(),
-                  Icon(on ? Icons.volume_up_rounded : Icons.volume_off_rounded, size: 20, color: on ? color : Colors.grey),
+                  Icon(on ? Icons.volume_up_rounded : Icons.volume_off_rounded, size: 20, color: on ? color : c.muted),
                 ]),
                 const SizedBox(height: 10),
-                Text(widget.data, style: const TextStyle(color: muted, fontSize: 13, fontWeight: FontWeight.w600)),
+                Text(widget.data, style: TextStyle(color: c.muted, fontSize: 13, fontWeight: FontWeight.w600)),
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(widget.value,
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: on ? nasaBlack : muted)),
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: on ? c.text : c.muted)),
                 ),
                 Text(widget.word,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: on ? color : muted)),
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: on ? color : c.muted)),
                 const SizedBox(height: 8),
                 Text(on ? widget.sound : 'Sound off: tap to turn on',
-                    style: const TextStyle(fontSize: 12, color: muted, height: 1.3)),
+                    style: TextStyle(fontSize: 12, color: c.muted, height: 1.3)),
               ]),
             ),
           ),
@@ -409,7 +414,7 @@ class _Timeline extends StatelessWidget {
             cursor: SystemMouseCursors.click,
             child: SizedBox(
               height: 58,
-              child: CustomPaint(painter: _TimelinePainter(song, mixtape.index, stories)),
+              child: CustomPaint(painter: _TimelinePainter(song, mixtape.index, stories, Palette.of(context))),
             ),
           ),
         ),
@@ -419,11 +424,12 @@ class _Timeline extends StatelessWidget {
 }
 
 class _TimelinePainter extends CustomPainter {
-  _TimelinePainter(this.song, this.index, this.stories);
+  _TimelinePainter(this.song, this.index, this.stories, this.c);
 
   final Song song;
   final int index;
   final List<int> stories;
+  final Palette c;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -432,19 +438,19 @@ class _TimelinePainter extends CustomPainter {
     final bar = RRect.fromRectAndRadius(Rect.fromLTWH(0, barTop, size.width, barHeight), const Radius.circular(7));
     double x(int i) => (i + 0.5) / count * size.width;
 
-    canvas.drawRRect(bar, Paint()..color = softBlue);
+    canvas.drawRRect(bar, Paint()..color = c.tint);
     canvas.save();
     canvas.clipRRect(bar);
-    canvas.drawRect(Rect.fromLTWH(0, barTop, x(index), barHeight), Paint()..color = nasaBlue);
+    canvas.drawRect(Rect.fromLTWH(0, barTop, x(index), barHeight), Paint()..color = c.blue);
     canvas.restore();
 
     // Story dots above the bar.
     for (final s in stories) {
-      canvas.drawCircle(Offset(x(s), 6), 4.5, Paint()..color = s <= index ? nasaRed : nasaRedBright.withValues(alpha: 0.55));
+      canvas.drawCircle(Offset(x(s), 6), 4.5, Paint()..color = s <= index ? c.red : nasaRedBright.withValues(alpha: 0.55));
     }
 
     // Playhead.
-    canvas.drawCircle(Offset(x(index), barTop + barHeight / 2), 11, Paint()..color = Colors.white);
+    canvas.drawCircle(Offset(x(index), barTop + barHeight / 2), 11, Paint()..color = c.card);
     canvas.drawCircle(Offset(x(index), barTop + barHeight / 2), 11,
         Paint()..color = nasaRed..style = PaintingStyle.stroke..strokeWidth = 4);
 
@@ -453,7 +459,7 @@ class _TimelinePainter extends CustomPainter {
       final m = song.months[i];
       if (m.month != 1 || (m.year - song.start) % 5 != 0) continue;
       final tp = TextPainter(
-        text: TextSpan(text: '${m.year}', style: const TextStyle(fontFamily: 'Poppins', color: muted, fontSize: 12)),
+        text: TextSpan(text: '${m.year}', style: TextStyle(fontFamily: 'Poppins', color: c.muted, fontSize: 12)),
         textDirection: TextDirection.ltr,
       )..layout();
       final left = (i / count * size.width).clamp(0.0, size.width - tp.width);
@@ -462,7 +468,7 @@ class _TimelinePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_TimelinePainter old) => old.index != index || old.song != song;
+  bool shouldRepaint(_TimelinePainter old) => old.index != index || old.song != song || old.c != c;
 }
 
 class _Controls extends StatelessWidget {
@@ -472,6 +478,7 @@ class _Controls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = Palette.of(context);
     final playing = mixtape.playing;
     return Wrap(
       crossAxisAlignment: WrapCrossAlignment.center,
@@ -516,18 +523,18 @@ class _Controls extends StatelessWidget {
           IconButton(
             onPressed: mixtape.restart,
             tooltip: 'Start again',
-            icon: const Icon(Icons.restart_alt_rounded, color: nasaBlue),
+            icon: Icon(Icons.restart_alt_rounded, color: c.blue),
           ),
         ]),
         Row(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.speed_rounded, color: nasaBlue, size: 20),
+          Icon(Icons.speed_rounded, color: c.blue, size: 20),
           const SizedBox(width: 6),
           SegmentedButton<double>(
             showSelectedIcon: false,
             style: SegmentedButton.styleFrom(
               selectedBackgroundColor: nasaBlue,
               selectedForegroundColor: Colors.white,
-              foregroundColor: nasaBlue,
+              foregroundColor: c.blue,
               textStyle: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600),
             ),
             segments: const [
@@ -540,7 +547,7 @@ class _Controls extends StatelessWidget {
           ),
         ]),
         Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(mixtape.volume == 0 ? Icons.volume_off_rounded : Icons.volume_up_rounded, color: nasaBlue, size: 22),
+          Icon(mixtape.volume == 0 ? Icons.volume_off_rounded : Icons.volume_up_rounded, color: c.blue, size: 22),
           SizedBox(
             width: 150,
             child: Slider(
@@ -567,28 +574,29 @@ class _Story extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = Palette.of(context);
     final current = song.lineAt(mixtape.index);
     return Theme(
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
       child: Container(
-        decoration: BoxDecoration(color: paper, borderRadius: BorderRadius.circular(18)),
+        decoration: BoxDecoration(color: c.panel, borderRadius: BorderRadius.circular(18)),
         child: ExpansionTile(
           shape: const RoundedRectangleBorder(),
-          leading: const Icon(Icons.menu_book_rounded, color: nasaBlue),
+          leading: Icon(Icons.menu_book_rounded, color: c.blue),
           title: const Text('Read the whole story', style: TextStyle(fontWeight: FontWeight.w700)),
-          subtitle: Text('${song.stories.length} moments. Tap one to jump there.', style: const TextStyle(color: muted, fontSize: 13)),
+          subtitle: Text('${song.stories.length} moments. Tap one to jump there.', style: TextStyle(color: c.muted, fontSize: 13)),
           childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
           children: [
             for (final l in song.lines)
               ListTile(
                 dense: true,
                 selected: l == current,
-                selectedTileColor: softBlue,
+                selectedTileColor: c.tint,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 leading: Icon(l.isStory ? Icons.notifications_active_rounded : Icons.record_voice_over_rounded,
-                    color: l.isStory ? nasaRed : nasaBlue, size: 20),
-                title: Text(l.text, style: const TextStyle(fontSize: 14, height: 1.4, color: nasaBlack)),
-                subtitle: l.isStory ? Text(monthTitle(song.months[l.index]), style: const TextStyle(color: muted)) : null,
+                    color: l.isStory ? c.red : c.blue, size: 20),
+                title: Text(l.text, style: TextStyle(fontSize: 14, height: 1.4, color: c.text)),
+                subtitle: l.isStory ? Text(monthTitle(song.months[l.index]), style: TextStyle(color: c.muted)) : null,
                 onTap: () => mixtape.seek(l.index),
               ),
           ],
