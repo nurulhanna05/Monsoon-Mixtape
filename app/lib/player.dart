@@ -568,13 +568,6 @@ class _Controls extends StatelessWidget {
           ),
         ]),
         Row(mainAxisSize: MainAxisSize.min, children: [
-          IconButton(
-            onPressed: mixtape.toggleNarrator,
-            isSelected: mixtape.narrator,
-            tooltip: mixtape.narrator ? 'Narrator voice: on' : 'Narrator voice: off',
-            icon: Icon(Icons.voice_over_off_rounded, color: c.muted),
-            selectedIcon: Icon(Icons.record_voice_over_rounded, color: c.blue),
-          ),
           Icon(mixtape.volume == 0 ? Icons.volume_off_rounded : Icons.volume_up_rounded, color: c.blue, size: 22),
           SizedBox(
             width: 150,

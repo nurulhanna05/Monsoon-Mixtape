@@ -18,8 +18,6 @@ extension type _Bridge._(JSObject _) implements JSObject {
   external void setTempo(double factor);
   external void setVolume(double percent);
   external void setLayer(String layer, bool on);
-  external void speak(String text);
-  external void hush();
   external void mountBand(JSObject element);
 }
 
@@ -43,8 +41,6 @@ class Audio {
   void setTempo(double factor) => _bridge.setTempo(factor);
   void setVolume(double percent) => _bridge.setVolume(percent);
   void setLayer(String layer, bool on) => _bridge.setLayer(layer, on);
-  void speak(String text) => _bridge.speak(text);
-  void hush() => _bridge.hush();
   // Put the animated band players (band.js) into an HTML element.
   void mountBand(Object element) => _bridge.mountBand(element as JSObject);
 }
