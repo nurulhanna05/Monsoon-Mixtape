@@ -32,6 +32,8 @@ class Mixtape extends ChangeNotifier {
   List<Note> chart = []; // notes for the rhythm-game highway
   int index = 0; // month being heard
   bool loading = false;
+  bool warming = false; // song loaded, "Getting ready" before it plays
+  bool _warmedUp = false; // the first song of a visit waits a little longer
   bool playing = false;
   bool finished = false;
   String? error;
@@ -45,8 +47,7 @@ class Mixtape extends ChangeNotifier {
 
   int _request = 0; // ignore slow answers for places the user has moved on from
 
-  static Uri _url(String path, [Map<String, String>? query]) =>
-      Uri.base.resolve(path).replace(queryParameters: query);
+  static Uri _url(String path, [Map<String, String>? query]) => Uri.base.resolve(path).replace(queryParameters: query);
 
   Future<void> loadStatic() async {
     _loadShareUrl();
@@ -95,7 +96,8 @@ class Mixtape extends ChangeNotifier {
   Town? get photoTown {
     final at = picked;
     if (at == null || towns.isEmpty) return null;
-    double away(Town t) => (t.lat - at.latitude) * (t.lat - at.latitude) + (t.lon - at.longitude) * (t.lon - at.longitude);
+    double away(Town t) =>
+        (t.lat - at.latitude) * (t.lat - at.latitude) + (t.lon - at.longitude) * (t.lon - at.longitude);
     return towns.reduce((a, b) => away(a) <= away(b) ? a : b);
   }
 
@@ -131,11 +133,20 @@ class Mixtape extends ChangeNotifier {
       song = s;
       chart = [for (final n in jsonDecode(chartJson)) Note.fromJson(n)];
       loading = false;
+      // Show the stage for a moment before the music: the phone prepares
+      // the drawing then, instead of stuttering through the first bars.
+      warming = true;
+      notifyListeners();
+      await Future.delayed(Duration(milliseconds: _warmedUp ? 300 : 1500));
+      _warmedUp = true;
+      warming = false;
+      if (id != _request) return;
       await audio.play();
       playing = true;
     } catch (e) {
       if (id != _request) return;
       loading = false;
+      warming = false;
       error = '$e'.replaceFirst('Exception: ', '');
     }
     notifyListeners();

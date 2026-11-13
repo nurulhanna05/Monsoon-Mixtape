@@ -53,6 +53,13 @@ class _PhotoShowState extends State<PhotoShow> {
         _town = town;
         _shown = 0;
       });
+      // Fetch all of this place's photos now, not one by one mid-song.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        for (final p in _photos) {
+          precacheImage(NetworkImage(Mixtape.photoUrl(p).toString()), context);
+        }
+      });
     }
     if (m.playing && _photos.length > 1) {
       _timer ??= Timer.periodic(_every, (_) => _go(_shown + 1));
