@@ -59,7 +59,8 @@ class Player extends StatelessWidget {
 }
 
 class _Message extends StatelessWidget {
-  const _Message({required this.icon, required this.title, required this.text, this.color = nasaBlue, this.busy = false});
+  const _Message(
+      {required this.icon, required this.title, required this.text, this.color = nasaBlue, this.busy = false});
 
   final IconData icon;
   final String title;
@@ -122,9 +123,11 @@ class _Playing extends StatelessWidget {
       ]),
       const SizedBox(height: 12),
       Wrap(spacing: 8, runSpacing: 8, children: [
-        _Fact(Icons.thermostat_rounded, song.tempChange >= 0
-            ? '${song.tempChange.toStringAsFixed(1)}°C warmer than in ${song.start}'
-            : '${(-song.tempChange).toStringAsFixed(1)}°C cooler than in ${song.start}'),
+        _Fact(
+            Icons.thermostat_rounded,
+            song.tempChange >= 0
+                ? '${song.tempChange.toStringAsFixed(1)}°C warmer than in ${song.start}'
+                : '${(-song.tempChange).toStringAsFixed(1)}°C cooler than in ${song.start}'),
         _Fact(Icons.wb_sunny_rounded, 'Hottest year: ${song.hottestYear}'),
         _Fact(Icons.umbrella_rounded, 'Wettest year: ${song.wettestYear}'),
         _Fact(Icons.notifications_active_rounded, '${song.unusualCount} gong moments'),
@@ -138,14 +141,37 @@ class _Playing extends StatelessWidget {
         final nowPlaying = Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [nasaBlue, nasaBlueDeep], begin: Alignment.topLeft, end: Alignment.bottomRight),
+            gradient: const LinearGradient(
+                colors: [nasaBlue, nasaBlueDeep], begin: Alignment.topLeft, end: Alignment.bottomRight),
             borderRadius: BorderRadius.circular(22),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('NOW PLAYING',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.5)),
-            Text(monthTitle(m), style: const TextStyle(color: Colors.white, fontSize: 38, fontWeight: FontWeight.w800, height: 1.2)),
-            Text(seasonNames[m.season] ?? '', style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 15)),
+                style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.75),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.5)),
+            // One line each, shrunk to fit: if "September 2008" wrapped on a
+            // phone, the box would grow and the page jump every month.
+            SizedBox(
+                height: 46, // fixed, so a shrunk title doesn't change the height either
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(monthTitle(m),
+                      maxLines: 1,
+                      style:
+                          const TextStyle(color: Colors.white, fontSize: 38, fontWeight: FontWeight.w800, height: 1.2)),
+                )),
+            SizedBox(
+                height: 22,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(seasonNames[m.season] ?? '',
+                      maxLines: 1, style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 15)),
+                )),
             const SizedBox(height: 12),
             if (wide)
               Expanded(child: _Chat(mixtape: mixtape, song: song))
@@ -175,7 +201,8 @@ class _Playing extends StatelessWidget {
       Row(children: [
         const Text('The band', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
         const SizedBox(width: 10),
-        Flexible(child: Text('Tap a tile to turn that sound off or on', style: TextStyle(color: c.muted, fontSize: 13))),
+        Flexible(
+            child: Text('Tap a tile to turn that sound off or on', style: TextStyle(color: c.muted, fontSize: 13))),
       ]),
       const SizedBox(height: 10),
       LayoutBuilder(builder: (context, size) {
@@ -183,7 +210,8 @@ class _Playing extends StatelessWidget {
         final width = (size.maxWidth - 10 * (perRow - 1)) / perRow;
         Widget tile(String layer, IconData icon, String data, String value, String word, String sound) => SizedBox(
               width: width,
-              child: _BandTile(mixtape: mixtape, layer: layer, icon: icon, data: data, value: value, word: word, sound: sound),
+              child: _BandTile(
+                  mixtape: mixtape, layer: layer, icon: icon, data: data, value: value, word: word, sound: sound),
             );
         return Wrap(spacing: 10, runSpacing: 10, children: [
           tile('melody', Icons.thermostat_rounded, 'Temperature', '${m.temp.toStringAsFixed(1)}°C', tempWord(song, m),
@@ -459,7 +487,10 @@ class _BandTileState extends State<_BandTile> with SingleTickerProviderStateMixi
                     animation: bounce,
                     builder: (context, _) => CircleAvatar(
                       radius: 18,
-                      backgroundColor: on ? Color.lerp(day.tiles[widget.layer], nasaRedBright, bounce.isAnimating ? 1 - bounce.value : 0) : Colors.grey,
+                      backgroundColor: on
+                          ? Color.lerp(
+                              day.tiles[widget.layer], nasaRedBright, bounce.isAnimating ? 1 - bounce.value : 0)
+                          : Colors.grey,
                       foregroundColor: Colors.white,
                       child: Icon(widget.icon, size: 20),
                     ),
@@ -556,13 +587,19 @@ class _TimelinePainter extends CustomPainter {
 
     // Story dots above the bar.
     for (final s in stories) {
-      canvas.drawCircle(Offset(x(s), 6), 4.5, Paint()..color = s <= index ? c.red : nasaRedBright.withValues(alpha: 0.55));
+      canvas.drawCircle(
+          Offset(x(s), 6), 4.5, Paint()..color = s <= index ? c.red : nasaRedBright.withValues(alpha: 0.55));
     }
 
     // Playhead.
     canvas.drawCircle(Offset(x(index), barTop + barHeight / 2), 11, Paint()..color = c.card);
-    canvas.drawCircle(Offset(x(index), barTop + barHeight / 2), 11,
-        Paint()..color = nasaRed..style = PaintingStyle.stroke..strokeWidth = 4);
+    canvas.drawCircle(
+        Offset(x(index), barTop + barHeight / 2),
+        11,
+        Paint()
+          ..color = nasaRed
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 4);
 
     // Year labels every 5 years.
     for (var i = 0; i < count; i++) {
@@ -618,8 +655,12 @@ class _Controls extends StatelessWidget {
                   padding: EdgeInsets.zero,
                   elevation: 3,
                 ),
-                child: Icon(playing ? Icons.pause_rounded : (mixtape.finished ? Icons.replay_rounded : Icons.play_arrow_rounded),
-                    size: 44, color: Colors.white),
+                child: Icon(
+                    playing
+                        ? Icons.pause_rounded
+                        : (mixtape.finished ? Icons.replay_rounded : Icons.play_arrow_rounded),
+                    size: 44,
+                    color: Colors.white),
               ),
             ),
           ),
@@ -694,7 +735,8 @@ class _Story extends StatelessWidget {
           shape: const RoundedRectangleBorder(),
           leading: Icon(Icons.menu_book_rounded, color: c.blue),
           title: const Text('Read the whole story', style: TextStyle(fontWeight: FontWeight.w700)),
-          subtitle: Text('${song.stories.length} moments. Tap one to jump there.', style: TextStyle(color: c.muted, fontSize: 13)),
+          subtitle: Text('${song.stories.length} moments. Tap one to jump there.',
+              style: TextStyle(color: c.muted, fontSize: 13)),
           childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
           children: [
             for (final l in song.lines)
