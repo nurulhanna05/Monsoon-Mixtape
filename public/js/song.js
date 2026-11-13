@@ -38,7 +38,13 @@ function ranker(values) {
 // Precompute what each month sounds like.
 export function buildBeats(song) {
   const months = song.months;
-  const tempN = scaler(months.map((m) => m.temp));
+  // The melody follows a 3-month average temperature, so it moves with the
+  // seasons instead of zig-zagging on every small wobble.
+  const smoothTemp = months.map((_, i) => {
+    const near = months.slice(Math.max(0, i - 1), i + 2);
+    return near.reduce((sum, m) => sum + m.temp, 0) / near.length;
+  });
+  const tempN = scaler(smoothTemp);
   const rainN = ranker(months.map((m) => m.rain));
   const humN = scaler(months.map((m) => m.humidity));
   const aodN = scaler(months.map((m) => m.aod));
@@ -52,8 +58,12 @@ export function buildBeats(song) {
 
     // Hotter = higher, but move at most one scale step per month so the
     // melody walks instead of jumping.
-    const target = Math.round(tempN(m.temp) * (MELODY_STEPS - 1));
+    const target = Math.round(tempN(smoothTemp[i]) * (MELODY_STEPS - 1));
+    const previous = step;
     step = step === null ? target : step + Math.sign(target - step);
+    // Ornament: a neighbouring scale note, alternating above and below, so
+    // held notes get a little movement instead of an octave leap.
+    const neighbour = Math.min(MELODY_STEPS - 1, Math.max(0, step + (i % 2 ? -1 : 1)));
 
     const density = Math.min(texture.maxKompang, Math.round(rain * 4));
     return {
@@ -61,6 +71,8 @@ export function buildBeats(song) {
       month: m,
       step,
       freq: slendro(step),
+      repeat: step === previous, // same note as last month: played softer
+      ornamentFreq: slendro(neighbour === step ? step - 1 : neighbour),
       bonang: texture.bonang,
       kompangHits: KOMPANG_PATTERNS[density],
       gendang: i % texture.gendangEvery === 0,
@@ -101,11 +113,13 @@ export function scheduleSong(beats, inst, leadName, { onBeat, onHit, onEnd }) {
       inst.reverb.wet.rampTo(beat.reverbWet * inst.echoLevel, ramp, time);
       inst.serulingFilter.frequency.rampTo(beat.serulingCutoff, ramp, time);
 
-      const noteLength = beatSec * (lead.legato ? 1.1 : 1.5);
-      lead.play(beat.freq, noteLength, time, 0.7);
+      const noteLength = beat.repeat && !lead.legato ? beatSec * 2.2 : beatSec * (lead.legato ? 1.1 : 1.5);
+      lead.play(beat.freq, noteLength, time, beat.repeat ? 0.45 : 0.7);
       show(time, "lead", { step: beat.step, duration: noteLength });
-      if (beat.bonang && lead.elaborate) {
-        lead.play(beat.freq * 2, beatSec, at(0.5), 0.3);
+      // Busy (wet) season, or a note held over from last month: add the
+      // neighbour-note ornament half a beat later.
+      if ((beat.bonang || beat.repeat) && lead.elaborate) {
+        lead.play(beat.ornamentFreq, beatSec, at(0.5), 0.25);
         show(at(0.5), "lead", { step: beat.step, duration: beatSec, soft: true });
       }
 
