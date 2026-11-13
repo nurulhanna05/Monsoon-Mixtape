@@ -1,4 +1,4 @@
-// Step 2: listen. The month you're hearing, what the narrator says, one
+// Step 2: listen. The month you're hearing, the narration as a chat, one
 // tile per instrument (tap to turn it off), a timeline and big controls.
 
 import 'package:material_ui/material_ui.dart';
@@ -109,11 +109,6 @@ class _Playing extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = Palette.of(context);
     final m = song.months[mixtape.index];
-    // A story stays up for about 4 seconds (16 months); after that the
-    // bubble points ahead to the next one instead.
-    final line = song.lineAt(mixtape.index);
-    final next = song.stories.where((l) => l.index > mixtape.index).firstOrNull;
-    final fresh = mixtape.index - line.index < 16 || line.kind == 'summary' || next == null;
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       // Place and quick facts.
@@ -136,7 +131,7 @@ class _Playing extends StatelessWidget {
       ]),
       const SizedBox(height: 20),
 
-      // Now playing (the month and the narrator's speech bubble) beside the
+      // Now playing (the month and the narration as a chat) beside the
       // rhythm-game stage; stacked on narrow screens.
       LayoutBuilder(builder: (context, size) {
         final wide = size.maxWidth >= 720;
@@ -151,16 +146,11 @@ class _Playing extends StatelessWidget {
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.5)),
             Text(monthTitle(m), style: const TextStyle(color: Colors.white, fontSize: 38, fontWeight: FontWeight.w800, height: 1.2)),
             Text(seasonNames[m.season] ?? '', style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 15)),
-            const SizedBox(height: 16),
-            if (wide) const Spacer(),
-            fresh
-                ? _Bubble(key: ValueKey(line), text: line.text, story: line.isStory)
-                : _Bubble(
-                    key: ValueKey('wait-${next.index}'),
-                    text: 'Keep listening… the next gong moment is ${monthTitle(song.months[next.index])}.',
-                    story: false,
-                    icon: Icons.headphones_rounded,
-                  ),
+            const SizedBox(height: 12),
+            if (wide)
+              Expanded(child: _Chat(mixtape: mixtape, song: song))
+            else
+              SizedBox(height: 280, child: _Chat(mixtape: mixtape, song: song)),
           ]),
         );
         if (!wide) {
@@ -240,32 +230,125 @@ class _Fact extends StatelessWidget {
   }
 }
 
-// What the narrator is saying, as a speech bubble that swaps in each line.
-class _Bubble extends StatelessWidget {
-  const _Bubble({super.key, required this.text, required this.story, this.icon});
+// The narration as a chat: each line arrives as a new bubble at the bottom
+// and stays, so you can scroll back through the whole story.
+class _Chat extends StatefulWidget {
+  const _Chat({required this.mixtape, required this.song});
 
-  final String text;
-  final bool story; // a gong moment, rather than the intro or a hint
-  final IconData? icon;
+  final Mixtape mixtape;
+  final Song song;
+
+  @override
+  State<_Chat> createState() => _ChatState();
+}
+
+class _ChatState extends State<_Chat> {
+  final scroll = ScrollController();
+  int _count = 0; // lines shown last time, to spot a new one
+
+  @override
+  void dispose() {
+    scroll.dispose();
+    super.dispose();
+  }
+
+  // Lines reached so far (all of them once the song has finished).
+  List<Line> get _shown => widget.mixtape.finished
+      ? widget.song.lines
+      : widget.song.lines.where((l) => l.index <= widget.mixtape.index).toList();
+
+  @override
+  void didUpdateWidget(_Chat old) {
+    super.didUpdateWidget(old);
+    final newSong = old.song != widget.song;
+    final count = _shown.length;
+    final grew = count > _count;
+    _count = count;
+    if (!newSong && !grew) return;
+    // A new line: follow it down, unless the reader has scrolled up to read.
+    // (The new bubble isn't laid out yet, so "at the bottom" is measured
+    // before it arrives.)
+    final atBottom = !scroll.hasClients || scroll.position.extentAfter < 80;
+    if (!newSong && !atBottom) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!scroll.hasClients) return;
+      final end = scroll.position.maxScrollExtent;
+      if (MediaQuery.disableAnimationsOf(context) || newSong) {
+        scroll.jumpTo(end);
+      } else {
+        scroll.animateTo(end, duration: const Duration(milliseconds: 400), curve: Curves.easeOutCubic);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final song = widget.song;
+    final shown = _shown;
+    final next = widget.mixtape.finished ? null : song.stories.where((l) => l.index > widget.mixtape.index).firstOrNull;
+
+    return RawScrollbar(
+      controller: scroll,
+      thumbVisibility: true,
+      thumbColor: Colors.white.withValues(alpha: 0.45),
+      radius: const Radius.circular(4),
+      thickness: 6,
+      child: ListView(
+        controller: scroll,
+        padding: const EdgeInsets.only(right: 14),
+        children: [
+          for (final (i, line) in shown.indexed)
+            _Bubble(
+              key: ValueKey(line),
+              line: line,
+              when: line.isStory ? monthTitle(song.months[line.index]) : null,
+              newest: i == shown.length - 1,
+            ),
+          // Like a "typing…" hint: what's coming next.
+          if (next != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 2, 0, 4),
+              child: Row(children: [
+                Icon(Icons.headphones_rounded, size: 16, color: Colors.white.withValues(alpha: 0.7)),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text('Next gong moment: ${monthTitle(song.months[next.index])}',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 13)),
+                ),
+              ]),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// One narration line in the chat. Slides in when it first appears.
+class _Bubble extends StatelessWidget {
+  const _Bubble({super.key, required this.line, this.when, this.newest = false});
+
+  final Line line;
+  final String? when; // the month, for gong moments
+  final bool newest; // read out by screen readers
 
   @override
   Widget build(BuildContext context) {
     final c = Palette.of(context);
+    final story = line.isStory;
     return Semantics(
-      liveRegion: true,
-      child: AnimatedSwitcher(
+      liveRegion: newest,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: 1),
         duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 350),
-        transitionBuilder: (child, anim) => FadeTransition(
-          opacity: anim,
-          child: SlideTransition(
-            position: Tween(begin: const Offset(0, 0.15), end: Offset.zero).animate(anim),
-            child: child,
-          ),
+        curve: Curves.easeOutCubic,
+        builder: (context, t, child) => Opacity(
+          opacity: t,
+          child: Transform.translate(offset: Offset(0, 12 * (1 - t)), child: child),
         ),
         child: Container(
-          key: key,
           width: double.infinity,
-          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: c.bubble,
             borderRadius: const BorderRadius.only(
@@ -277,10 +360,16 @@ class _Bubble extends StatelessWidget {
             border: Border(left: BorderSide(color: story ? nasaRedBright : c.blue, width: 5)),
           ),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Icon(icon ?? (story ? Icons.notifications_active_rounded : Icons.record_voice_over_rounded),
-                color: story ? c.red : c.blue, size: 22),
+            Icon(story ? Icons.notifications_active_rounded : Icons.record_voice_over_rounded,
+                color: story ? c.red : c.blue, size: 20),
             const SizedBox(width: 10),
-            Expanded(child: Text(text, style: const TextStyle(fontSize: 16, height: 1.45, fontWeight: FontWeight.w500))),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                if (when != null)
+                  Text(when!, style: TextStyle(color: c.red, fontSize: 12, fontWeight: FontWeight.w700)),
+                Text(line.text, style: const TextStyle(fontSize: 15, height: 1.45, fontWeight: FontWeight.w500)),
+              ]),
+            ),
           ]),
         ),
       ),
