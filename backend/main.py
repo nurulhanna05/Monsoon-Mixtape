@@ -7,6 +7,7 @@ from pathlib import Path
 from urllib.error import URLError
 
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -16,6 +17,9 @@ DEFAULT_START, DEFAULT_END = 2006, 2025
 PUBLIC_DIR = Path(__file__).parent.parent / "public"
 
 app = FastAPI(title="Monsoon Mixtape")
+# Compress what we send: the Flutter app is ~11 MB raw but ~4 MB zipped,
+# which matters on a phone's mobile data.
+app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=6)
 
 
 @app.middleware("http")
