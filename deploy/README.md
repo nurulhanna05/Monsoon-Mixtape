@@ -1,4 +1,14 @@
-# Putting Monsoon Mixtape online (Ubuntu)
+# Putting Monsoon Mixtape online
+
+**Free and simplest: Render.** Sign in at render.com with GitHub, choose
+New → Blueprint, pick this repo and click Deploy (it uses `render.yaml`).
+You get a link like `https://monsoon-mixtape.onrender.com`. On the free
+plan it sleeps after ~15 minutes without visitors, so open it once before a
+demo. The QR code points at the Render link automatically.
+
+The rest of this page is for running it on your own Ubuntu server instead.
+
+## Ubuntu server
 
 This gives the app a public web address, so the QR code in the header opens
 it on anyone's phone.
