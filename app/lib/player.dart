@@ -3,6 +3,7 @@
 
 import 'package:material_ui/material_ui.dart';
 
+import 'highway.dart';
 import 'mixtape.dart';
 import 'models.dart';
 import 'place_picker.dart';
@@ -135,29 +136,49 @@ class _Playing extends StatelessWidget {
       ]),
       const SizedBox(height: 20),
 
-      // Now playing: the month and the narrator's speech bubble.
-      Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [nasaBlue, nasaBlueDeep], begin: Alignment.topLeft, end: Alignment.bottomRight),
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('NOW PLAYING',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.5)),
-          Text(monthTitle(m), style: const TextStyle(color: Colors.white, fontSize: 38, fontWeight: FontWeight.w800, height: 1.2)),
-          Text(seasonNames[m.season] ?? '', style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 15)),
-          const SizedBox(height: 16),
-          fresh
-              ? _Bubble(key: ValueKey(line), text: line.text, story: line.isStory)
-              : _Bubble(
-                  key: ValueKey('wait-${next.index}'),
-                  text: 'Keep listening… the next gong moment is ${monthTitle(song.months[next.index])}.',
-                  story: false,
-                  icon: Icons.headphones_rounded,
-                ),
-        ]),
-      ),
+      // Now playing (the month and the narrator's speech bubble) beside the
+      // rhythm-game stage; stacked on narrow screens.
+      LayoutBuilder(builder: (context, size) {
+        final wide = size.maxWidth >= 720;
+        final nowPlaying = Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(colors: [nasaBlue, nasaBlueDeep], begin: Alignment.topLeft, end: Alignment.bottomRight),
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('NOW PLAYING',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.5)),
+            Text(monthTitle(m), style: const TextStyle(color: Colors.white, fontSize: 38, fontWeight: FontWeight.w800, height: 1.2)),
+            Text(seasonNames[m.season] ?? '', style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 15)),
+            const SizedBox(height: 16),
+            if (wide) const Spacer(),
+            fresh
+                ? _Bubble(key: ValueKey(line), text: line.text, story: line.isStory)
+                : _Bubble(
+                    key: ValueKey('wait-${next.index}'),
+                    text: 'Keep listening… the next gong moment is ${monthTitle(song.months[next.index])}.',
+                    story: false,
+                    icon: Icons.headphones_rounded,
+                  ),
+          ]),
+        );
+        if (!wide) {
+          return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            nowPlaying,
+            const SizedBox(height: 16),
+            Highway(mixtape: mixtape, height: 360),
+          ]);
+        }
+        return SizedBox(
+          height: 350,
+          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Expanded(flex: 5, child: nowPlaying),
+            const SizedBox(width: 16),
+            Expanded(flex: 4, child: Highway(mixtape: mixtape, height: 350)),
+          ]),
+        );
+      }),
       const SizedBox(height: 20),
 
       // The band: one tile per sound.

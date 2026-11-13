@@ -9,7 +9,8 @@ external _Bridge get _bridge;
 extension type _Bridge._(JSObject _) implements JSObject {
   external JSPromise<JSAny?> prepare();
   external void setHandlers(JSFunction onBeat, JSFunction onHit, JSFunction onEnd);
-  external JSPromise<JSNumber> load(String json);
+  external JSPromise<JSString> load(String json);
+  external double position();
   external JSPromise<JSAny?> play();
   external void pause();
   external void stop();
@@ -29,7 +30,9 @@ class Audio {
   }
 
   Future<void> prepare() => _bridge.prepare().toDart;
-  Future<void> load(String songJson) => _bridge.load(songJson).toDart;
+  // Returns the note chart for the highway, as JSON.
+  Future<String> load(String songJson) async => (await _bridge.load(songJson).toDart).toDart;
+  double position() => _bridge.position();
   Future<void> play() => _bridge.play().toDart;
   void pause() => _bridge.pause();
   void stop() => _bridge.stop();

@@ -56,6 +56,12 @@ still at **/index.html** (linked at the bottom of the app).
 - **Listen**: a big red Play button, the month in large type, and a speech
   bubble with the narration. Quick facts at the top (how much warmer it got,
   hottest and wettest year).
+- **The stage**: a rhythm-game note highway (from the `playground`
+  branch) beside the month. Every note falls down its lane and lands on the
+  target arrow exactly when you hear it: melody arrows go from pale coral
+  (cooler) to NASA red (hotter), drum taps and hits, flute hold notes (grey
+  when hazy) and gold gongs that glow in unusual months. Nothing to press;
+  it shows each month of data land.
 - **The band**: one tile per sound showing the data in everyday words
   ("Hot", "Very rainy", "Hazy!"). Tiles bounce when they play; tap one to
   turn that sound off or on.

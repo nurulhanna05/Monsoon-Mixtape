@@ -42,6 +42,30 @@ function percentToDb(percent) {
   return percent === 0 ? -Infinity : Tone.gainToDb((percent / 100) ** 2);
 }
 
+// Every note in the song for the rhythm-game highway, sorted by time. `at`
+// and `len` are in beats (months). Same rules as the playground branch.
+function buildChart(beats) {
+  const notes = [];
+  for (const b of beats) {
+    const i = b.index;
+    // Melody: one arrow per month, coloured by how hot it is.
+    notes.push({ lane: "melody", at: i, heat: b.step / 8, kind: "gem" });
+    // Drums: small arrows for kompang taps, full-size ones for gendang hits.
+    for (const s of b.kompangHits) notes.push({ lane: "drums", at: i + s / 4, kind: "tap" });
+    if (b.gendang) notes.push({ lane: "drums", at: i, kind: "drum" });
+    if (b.gendangExtra) notes.push({ lane: "drums", at: i + 0.5, kind: "drum" });
+    // Flute: a hold note for each phrase; grey in hazy months.
+    if (b.serulingBeats) {
+      notes.push({ lane: "flute", at: i, len: b.serulingBeats * 0.9, kind: "hold", hazy: b.hazy });
+    }
+    // Gongs: kenong and kempul keep time; the big gong marks unusual months.
+    if (b.kenong) notes.push({ lane: "gongs", at: i, kind: "tick" });
+    if (b.kempul) notes.push({ lane: "gongs", at: i, kind: "kempul" });
+    if (b.gong) notes.push({ lane: "gongs", at: i, kind: "gong", severity: b.gong.severity });
+  }
+  return notes.sort((a, b) => a.at - b.at);
+}
+
 function hit(name, info) {
   // Group the instruments into the four tiles the app shows.
   const tile = { lead: "melody", kompang: "drums", gendang: "drums", seruling: "flute", gong: "gongs" }[name];
@@ -55,7 +79,8 @@ window.mixtapeAudio = {
     handlers = { onBeat, onHit, onEnd };
   },
 
-  // Schedules a /song response (as a JSON string) and returns the month count.
+  // Schedules a /song response (as a JSON string) and returns its note
+  // chart as a JSON string.
   async load(json) {
     await prepare();
     const song = JSON.parse(json);
@@ -69,7 +94,12 @@ window.mixtapeAudio = {
         handlers.onEnd();
       },
     });
-    return beats.length;
+    return JSON.stringify(buildChart(beats));
+  },
+
+  // Months played so far, at the moment you hear them (for the highway).
+  position() {
+    return transport.getTicksAtTime(Tone.immediate()) / transport.PPQ;
   },
 
   async play() {

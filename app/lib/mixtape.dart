@@ -26,6 +26,7 @@ class Mixtape extends ChangeNotifier {
   LatLng? picked;
   String? pickedName; // city name while loading, before the server answers
   Song? song;
+  List<Note> chart = []; // notes for the rhythm-game highway
   int index = 0; // month being heard
   bool loading = false;
   bool playing = false;
@@ -90,9 +91,10 @@ class Mixtape extends ChangeNotifier {
       final body = jsonDecode(resp.body);
       if (resp.statusCode != 200) throw Exception(body['detail'] ?? resp.reasonPhrase);
       final s = Song.fromJson(body, resp.body);
-      await audio.load(s.raw);
+      final chartJson = await audio.load(s.raw);
       if (id != _request) return;
       song = s;
+      chart = [for (final n in jsonDecode(chartJson)) Note.fromJson(n)];
       loading = false;
       await audio.play();
       playing = true;

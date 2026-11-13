@@ -78,3 +78,23 @@ class Song {
   // The narration line most recently reached at month [i].
   Line lineAt(int i) => lines.lastWhere((l) => l.index <= i, orElse: () => lines.first);
 }
+
+// One note on the rhythm-game highway.
+class Note {
+  Note.fromJson(Map<String, dynamic> j)
+      : lane = j['lane'],
+        kind = j['kind'],
+        at = (j['at'] as num).toDouble(),
+        len = (j['len'] as num? ?? 0).toDouble(),
+        heat = (j['heat'] as num? ?? 0).toDouble(),
+        severity = (j['severity'] as num? ?? 0).toDouble(),
+        hazy = j['hazy'] == true;
+
+  final String lane; // melody, drums, flute, gongs
+  final String kind; // gem, tap, drum, hold, tick, kempul, gong
+  final double at; // beats (months) from the start
+  final double len; // hold notes only
+  final double heat; // melody: 0 coolest to 1 hottest
+  final double severity; // big gong: how unusual
+  final bool hazy; // flute: muffled by haze
+}
